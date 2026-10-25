@@ -11,7 +11,18 @@ export interface ActionContext {
   applyHud: () => Promise<boolean>;
   enableReplayApi: () => void;
   recorder: { toggle: () => boolean };
+  playback: {
+    seek: (delta: number) => Promise<boolean>;
+    jump: (time: number) => Promise<boolean>;
+    live: () => Promise<boolean>;
+    togglePause: () => Promise<boolean>;
+    set: (p: { speed?: number; paused?: boolean }) => Promise<boolean>;
+  };
 }
+
+const notAvailable = (ok: boolean) => {
+  if (!ok) throw new Error('Replay API not reachable – is a game being spectated and the Replay API enabled (Setup tab)?');
+};
 
 type Handler = (ctx: ActionContext, payload: any) => unknown;
 
@@ -99,6 +110,19 @@ export const ACTIONS: Record<string, Handler> = {
 
   'hud:apply': ({ applyHud }) => applyHud(),
 
+  // ---- spectator playback (Replay API) ----
+  'replay:seek': async ({ playback }, p: { delta: number }) => notAvailable(await playback.seek(p.delta)),
+  'replay:jump': async ({ playback }, p: { time: number }) => notAvailable(await playback.jump(p.time)),
+  'replay:live': async ({ playback }) => notAvailable(await playback.live()),
+  'replay:pause': async ({ playback }) => notAvailable(await playback.togglePause()),
+  'replay:speed': async ({ playback }, p: { speed: number }) => notAvailable(await playback.set({ speed: p.speed })),
+
+  /** Riot's replay bar in the game: hidden from the stream by default, can be shown for the operator. */
+  'replay:bar': async ({ store, applyHud }, p?: { show?: boolean }) => {
+    store.update('ui', u => { u.replayBar = p?.show ?? !u.replayBar; });
+    await applyHud();
+  },
+
   'gamecfg:enableReplayApi': ({ enableReplayApi }) => enableReplayApi(),
 
   'recorder:toggle': ({ recorder, store }) => {
@@ -121,4 +145,12 @@ export function hotkeyAction(ctx: ActionContext, binding: string): void {
   else if (binding === 'postgame:page') runAction(ctx, 'ui:postgamePage');
   else if (binding === 'scenes:auto') runAction(ctx, 'ui:autoScenes');
   else if (kind === 'scene') runAction(ctx, 'ui:scene', { scene: arg });
+  else if (kind === 'replay') {
+    const run = (name: string, payload?: unknown) => Promise.resolve(runAction(ctx, name, payload)).catch(() => { /* no game */ });
+    if (arg === 'back10') void run('replay:seek', { delta: -10 });
+    else if (arg === 'fwd10') void run('replay:seek', { delta: 10 });
+    else if (arg === 'pause') void run('replay:pause');
+    else if (arg === 'live') void run('replay:live');
+    else if (arg === 'bar') void run('replay:bar');
+  }
 }

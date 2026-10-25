@@ -58,6 +58,8 @@ export const DEFAULT_SETTINGS: Settings = {
   hotkeys: {
     'h2h:TOP': 'Ctrl+Alt+1', 'h2h:JGL': 'Ctrl+Alt+2', 'h2h:MID': 'Ctrl+Alt+3', 'h2h:BOT': 'Ctrl+Alt+4', 'h2h:SUP': 'Ctrl+Alt+5',
     'h2h:off': 'Ctrl+Alt+0', 'postgame:page': 'Ctrl+Alt+P', 'scenes:auto': 'Ctrl+Alt+A', 'scene:pause': 'Ctrl+Alt+F9',
+    'replay:back10': 'Ctrl+Alt+ArrowLeft', 'replay:fwd10': 'Ctrl+Alt+ArrowRight', 'replay:pause': 'Ctrl+Alt+Space',
+    'replay:live': 'Ctrl+Alt+End', 'replay:bar': 'Ctrl+Alt+R',
   },
   postgameDelayMs: 3000,
   browserPath: '',

@@ -5,7 +5,7 @@ import { Store } from './state/store.ts';
 import { SourceBus } from './sources/raw.ts';
 import { DataDragon } from './adapters/ddragon.ts';
 import { LcuAdapter } from './adapters/lcu.ts';
-import { LiveClientAdapter, applyReplayRender } from './adapters/liveclient.ts';
+import { LiveClientAdapter, ReplayPlayback, applyReplayRender } from './adapters/liveclient.ts';
 import { ObsAdapter } from './adapters/obs.ts';
 import { enableReplayApi, replayApiConfig } from './adapters/gamecfg.ts';
 import { Pipeline } from './ingest/pipeline.ts';
@@ -62,7 +62,10 @@ const ocr = mode === 'live' ? new GoldOcr(bus, store, obs, getSettings) : null;
 if (ocr) ocr.onCrops = crops => recorder.saveCrops(crops);
 
 const applyHud = async (quiet = false) => {
-  const ok = await applyReplayRender(settings.replayRender);
+  // the operator can choose to keep Riot's replay bar (timeline) visible in the game
+  const bar = store.get('ui').replayBar;
+  const flags = { ...settings.replayRender, ...(bar ? { interfaceReplay: true, interfaceTimeline: true } : {}) };
+  const ok = await applyReplayRender(flags);
   store.update('status', s => {
     s.replayApi = ok ? 'ok' : 'down';
     if (ok && /Replay API/.test(s.message)) s.message = '';   // the hint about enabling it is done
@@ -80,8 +83,36 @@ const scenes = new SceneController(store, obs, getSettings, () => {
   }, sec * 1000));
 });
 
+// spectator playback (pause / jump / speed) via the Replay API while a game is running
+const playback = new ReplayPlayback(p => {
+  const cur = store.get('status').playback;
+  const same = cur && p && Math.floor(cur.time) === Math.floor(p.time) && Math.floor(cur.length) === Math.floor(p.length)
+    && cur.paused === p.paused && cur.speed === p.speed;
+  if (!same && (cur || p)) store.update('status', s => { s.playback = p; });
+}, () => store.get('ingame').active);
+if (mode === 'live') playback.start();
+if (mode === 'mock') {
+  // simulated playback so the admin controls can be tried without a game: "behind live" offset, pause, speed
+  let behind = 0, paused = false, speed = 1;
+  const publish = () => {
+    const g = store.get('ingame');
+    store.update('status', s => { s.playback = g.active ? { time: Math.max(0, g.gameTime - behind), length: g.gameTime, paused, speed } : null; });
+  };
+  store.on('change', t => { if (t === 'ingame') publish(); });
+  const len = () => store.get('ingame').gameTime;
+  playback.set = async p => { if (p.paused !== undefined) paused = p.paused; if (p.speed) speed = p.speed; if (p.time !== undefined) behind = Math.max(0, len() - p.time); publish(); return true; };
+  playback.seek = async d => { behind = Math.min(len(), Math.max(0, behind - d)); publish(); return true; };
+  playback.jump = async t => { behind = Math.max(0, len() - t); publish(); return true; };
+  playback.live = async () => { behind = 0; paused = false; speed = 1; publish(); return true; };
+  playback.togglePause = async () => { paused = !paused; publish(); return true; };
+}
+
 const ctx: ActionContext = {
   store, scenes, applyHud,
+  playback: {
+    seek: d => playback.seek(d), jump: t => playback.jump(t), live: () => playback.live(),
+    togglePause: () => playback.togglePause(), set: p => playback.set(p),
+  },
   enableReplayApi: () => {
     enableReplayApi(settings.leagueDir);
     store.update('status', s => { s.replayApi = 'warn'; s.message = 'Replay API enabled in game.cfg – takes effect with the next game start'; });

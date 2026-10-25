@@ -182,6 +182,8 @@ export interface UiState {
   h2hLane: Role | null;
   postgamePage: 1 | 2;
   pauseText: string;
+  /** show Riot's replay bar (timeline) in the game instead of hiding it from the stream */
+  replayBar: boolean;
 }
 
 export type Health = 'ok' | 'warn' | 'down' | 'off';
@@ -194,6 +196,8 @@ export interface StatusState {
   obs: Health;
   ocr: Health;
   recording: boolean;
+  /** Replay API playback of the spectated game (null when not available) */
+  playback: { time: number; length: number; paused: boolean; speed: number } | null;
   gameflow: string;
   ddVersion: string;
   message: string;

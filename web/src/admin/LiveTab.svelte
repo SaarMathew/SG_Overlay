@@ -145,6 +145,44 @@
       {/if}
     </section>
 
+    {#if g?.active}
+      {@const pb = app.status?.playback}
+      <section class="card playback">
+        <div class="card-title">Playback
+          <span class="hint">{!pb ? 'Replay API not available' : pb.length - pb.time < 3 ? 'live' : `${fmtTime(pb.length - pb.time)} behind live`}</span>
+        </div>
+        {#if pb}
+          <!-- click on the bar to jump to that moment -->
+          <button class="timeline" aria-label="Jump in the game"
+            onclick={e => { const r = e.currentTarget.getBoundingClientRect(); action('replay:jump', { time: ((e.clientX - r.left) / r.width) * pb.length }); }}>
+            <span class="fill" style:width="{pb.length ? (pb.time / pb.length) * 100 : 0}%"></span>
+            <span class="times"><b>{fmtTime(pb.time)}</b><span>{fmtTime(pb.length)}</span></span>
+          </button>
+          <div class="pbtns">
+            <button onclick={() => action('replay:seek', { delta: -30 })}>−30 s</button>
+            <button onclick={() => action('replay:seek', { delta: -10 })}>−10 s {@render hk('replay:back10')}</button>
+            <button class="play" class:paused={pb.paused} onclick={() => action('replay:pause')}>{pb.paused ? '▶ Play' : '❚❚ Pause'} {@render hk('replay:pause')}</button>
+            <button onclick={() => action('replay:seek', { delta: 10 })}>+10 s {@render hk('replay:fwd10')}</button>
+            <button class="live-btn" disabled={pb.length - pb.time < 3 && !pb.paused && pb.speed === 1} onclick={() => action('replay:live')}>● Live {@render hk('replay:live')}</button>
+          </div>
+          <div class="row speed">
+            <span class="muted">Speed</span>
+            <div class="seg">
+              {#each [0.5, 1, 2] as sp}<button class:on={pb.speed === sp} onclick={() => action('replay:speed', { speed: sp })}>{sp}×</button>{/each}
+            </div>
+          </div>
+        {:else}
+          <p class="muted">Enable the Replay API in the Setup tab and spectate a game – then pause, jump back and speed controls appear here.</p>
+        {/if}
+        <label class="switch bar">
+          <input type="checkbox" checked={ui?.replayBar} onchange={() => action('replay:bar')} />
+          <span class="track"></span>
+          <span>Show Riot's replay bar in the game <span class="warnnote">· also visible on stream</span></span>
+          {@render hk('replay:bar')}
+        </label>
+      </section>
+    {/if}
+
     <section class="card">
       <div class="card-title">Starting soon countdown
         <span class="hint">{countdownLeft === null ? 'hidden' : countdownLeft > 0 ? `${String(Math.floor(countdownLeft / 60)).padStart(2, '0')}:${String(countdownLeft % 60).padStart(2, '0')} left` : 'shows “Live soon”'}</span>
@@ -220,6 +258,22 @@
   .score .vs { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 1.5px; }
   .facts { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; color: var(--muted); }
   .facts .pos { color: var(--sg); } .facts .neg { color: var(--opp); }
+  .timeline { position: relative; display: block; width: 100%; height: 44px; padding: 0 !important; overflow: hidden;
+              background: var(--surface-2) !important; border-radius: 10px !important; cursor: pointer; }
+  .timeline .fill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, rgba(155,77,255,.35), rgba(155,77,255,.6)); }
+  .timeline .times { position: relative; display: flex; justify-content: space-between; align-items: center; height: 100%; padding: 0 14px; }
+  .timeline .times b { font-size: 16px; }
+  .timeline .times span { color: var(--muted); font-size: 13px; }
+  .pbtns { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
+  .pbtns button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px !important; }
+  .pbtns .play { background: var(--sg) !important; border-color: var(--sg) !important; color: #fff; }
+  .pbtns .play.paused { background: var(--warn) !important; border-color: var(--warn) !important; color: #1a1300; }
+  .pbtns .live-btn { color: var(--onair); }
+  .pbtns .hk { margin-top: 0; }
+  .speed { margin-top: 12px; gap: 12px; }
+  .bar { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .bar .hk { margin-left: auto; }
+  .warnnote { color: var(--warn); }
   .link { padding: 6px 0 !important; color: var(--sg) !important; border: none !important; }
   .sep { width: 8px; }
   p { margin-top: 6px; line-height: 1.45; }
