@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ROLES, type MatchConfig } from '../../../shared/types.ts';
   import type { Action, App } from './types.ts';
+  import { draftStreamUrl } from '../../../shared/draft.ts';
 
   let { app, action }: { app: App; action: Action } = $props();
 
@@ -39,6 +40,14 @@
     input.value = '';
   }
   const ROLE_LABEL: Record<string, string> = { TOP: 'Top', JGL: 'Jungle', MID: 'Mid', BOT: 'Bot', SUP: 'Support' };
+
+  // drafter.lol link: applied immediately (not part of the save bar)
+  let draftLink = $state('');
+  let draftLoaded = false;
+  $effect(() => { if (app.match && !draftLoaded) { draftLink = app.match.draftUrl; draftLoaded = true; } });
+  const draftValid = $derived(!!draftStreamUrl(draftLink, 1));
+  const draftUrlNow = $derived(app.match?.draftUrl && app.series ? draftStreamUrl(app.match.draftUrl, app.series.gameNumber) : null);
+  const useDraft = () => { if (draftValid) action('match:update', { draftUrl: draftLink.trim() }); };
 </script>
 
 {#if form}
@@ -105,6 +114,22 @@
     </div>
 
     <section class="card">
+      <div class="card-title">Pick &amp; Ban · drafter.lol <span class="hint">the draft scene shows drafter.lol's stream view of the current game</span></div>
+      <div class="row">
+        <input style="flex:1" placeholder="Paste the drafter.lol link from the Prime League, e.g. https://drafter.lol/draft/o0N-kdyF"
+          bind:value={draftLink} onkeydown={e => e.key === 'Enter' && useDraft()} />
+        <button class="primary" disabled={!draftValid || draftLink.trim() === app.match?.draftUrl} onclick={useDraft}>Use link</button>
+        {#if app.match?.draftUrl}<button class="ghost" onclick={() => { draftLink = ''; action('match:update', { draftUrl: '' }); }}>Remove</button>{/if}
+      </div>
+      {#if draftLink.trim() && !draftValid}
+        <p class="bad">That is not a drafter.lol draft link (https://drafter.lol/draft/…).</p>
+      {:else if draftUrlNow}
+        <p class="muted">Game {app.series?.gameNumber} is shown (follows “Next game” in the Series tab):
+          <a href={draftUrlNow} target="_blank" rel="noreferrer">{draftUrlNow}</a></p>
+      {/if}
+    </section>
+
+    <section class="card">
       <div class="card-title">Rosters from the game</div>
       <div class="row wrap">
         <button onclick={() => serverAction('match:rostersFromGame')}>Fill both rosters from the running / last game</button>
@@ -156,4 +181,7 @@
   .savebar { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; z-index: 20;
              background: var(--surface-3); border: 1px solid var(--sg); border-radius: 12px; padding: 10px 12px 10px 18px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
   .savebar span { font-weight: 700; color: var(--warn); margin-right: 8px; }
+  p { margin-top: 10px; font-size: 13px; word-break: break-all; }
+  p.bad { color: var(--danger); }
+  a { color: var(--sg); }
 </style>

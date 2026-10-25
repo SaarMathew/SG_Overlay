@@ -9,7 +9,7 @@
 
   const SCENES: { key: SceneKey; label: string; desc: string; hk?: string }[] = [
     { key: 'startingSoon', label: 'Starting Soon', desc: 'Countdown, matchup' },
-    { key: 'draft', label: 'Draft', desc: 'drafter.lol view' },
+    { key: 'draft', label: 'Pick & Ban', desc: 'drafter.lol draft' },
     { key: 'lineup', label: 'Lineup', desc: 'Picks + Fearless', },
     { key: 'ingame', label: 'Ingame', desc: 'Game + overlay' },
     { key: 'postgame', label: 'Post-Game', desc: 'Stats + gold graph' },
@@ -52,7 +52,7 @@
           <button class="scene" class:on onclick={() => action('ui:scene', { scene: s.key })}>
             {#if on}<span class="tally">ON AIR</span>{/if}
             <span class="sname">{s.label}</span>
-            <span class="sdesc">{s.desc}</span>
+            <span class="sdesc" class:missing={s.key === 'draft' && !m?.draftUrl}>{s.key === 'draft' && !m?.draftUrl ? 'no drafter.lol link yet · Match tab' : s.desc}</span>
             {@render hk(s.hk)}
           </button>
         {/each}
@@ -182,6 +182,7 @@
            min-height: 86px; padding: 14px 16px !important; border-radius: 12px !important; border-width: 2px !important; }
   .scene .sname { font-size: 17px; font-weight: 800; }
   .scene .sdesc { font-size: 12px; color: var(--dim); font-weight: 500; }
+  .scene .sdesc.missing { color: var(--warn); }
   .scene.on { border-color: var(--onair) !important; background: rgba(255,59,69,.10) !important; box-shadow: 0 0 0 1px var(--onair) inset; }
   .tally { position: absolute; top: 10px; right: 10px; font-size: 10px; font-weight: 900; letter-spacing: 1.2px; color: #fff;
            background: var(--onair); padding: 3px 7px; border-radius: 5px; }

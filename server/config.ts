@@ -28,6 +28,8 @@ export interface Settings {
   hotkeys: Record<string, string>;         // action -> combo, e.g. "h2h:TOP": "Ctrl+Alt+1"
   postgameDelayMs: number;
   browserPath: string;                     // Edge/Chrome for reading drafter.lol, '' = auto-detect
+  /** read the drafter.lol draft in a hidden browser (off: drafter.lol refuses automated access; the draft overlay embeds their stream view instead) */
+  drafterReader: boolean;
 }
 
 const rows = (x: number) => [875, 919, 963, 1007, 1051].map(cy => ({ x, y: cy - 12, w: 150, h: 24 }));
@@ -59,6 +61,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   postgameDelayMs: 3000,
   browserPath: '',
+  drafterReader: false,
 };
 
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');

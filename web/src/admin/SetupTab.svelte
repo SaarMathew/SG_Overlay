@@ -6,10 +6,8 @@
 
   let { app, action }: { app: App; action: Action } = $props();
 
-  let draftLink = $state('');
-  $effect(() => { if (app.match && !draftLink) draftLink = app.match.draftUrl; });
   const base = `${location.protocol}//${location.host}`;
-  const OVERLAYS = ['starting-soon', 'lineup', 'ingame', 'postgame', 'pause'];
+  const OVERLAYS = ['starting-soon', 'draft', 'lineup', 'ingame', 'postgame', 'pause'];
   let copied = $state('');
   const copy = async (url: string) => {
     try { await navigator.clipboard.writeText(url); copied = url; setTimeout(() => (copied = ''), 1500); } catch { /* not allowed */ }
@@ -51,16 +49,6 @@
 
     <OcrPanel />
 
-    <Section title="Draft link (experimental)" hint="drafter.lol currently blocks automatic reading">
-      <div class="row">
-        <input style="flex:1" placeholder="https://drafter.lol/draft/…" bind:value={draftLink} />
-        <button onclick={() => action('match:update', { draftUrl: draftLink.trim() })}>Use</button>
-        {#if app.match?.draftUrl}<button class="ghost" onclick={() => { draftLink = ''; action('match:update', { draftUrl: '' }); }}>Clear</button>{/if}
-      </div>
-      {#if app.draft && app.draft.status !== 'off'}
-        <p class="muted">Status: {app.draft.status}{app.draft.message ? ` · ${app.draft.message}` : ''}</p>
-      {/if}
-    </Section>
   </div>
 </div>
 

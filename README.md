@@ -22,7 +22,7 @@ Jede Szene bekommt eine Browser-Source mit 1920×1080, „Shutdown source when n
 | Szene (Name in OBS) | Browser-Source |
 |---|---|
 | Starting Soon | `http://127.0.0.1:3210/overlay/starting-soon/` |
-| Draft | Zuschauer-Link der Prime-League-Draft-Seite |
+| Draft | `http://127.0.0.1:3210/overlay/draft/` – zeigt die drafter.lol-Stream-Ansicht (Pick & Ban) auf unserem Hintergrund; den drafter.lol-Link im Admin-Panel unter **Match** eintragen |
 | Lineup | `http://127.0.0.1:3210/overlay/lineup/` |
 | Ingame | Game Capture (Name wie in Settings, Standard „Game Capture“) + `http://127.0.0.1:3210/overlay/ingame/` + Webcam-Overlay |
 | Post-Game | `http://127.0.0.1:3210/overlay/postgame/` |

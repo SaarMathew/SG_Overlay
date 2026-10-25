@@ -72,8 +72,8 @@ export class DrafterService {
   async sync(): Promise<void> {
     const link = this.store.get('match').draftUrl;
     const game = this.store.get('series').gameNumber;
-    const want = link && !this.blocked && !this.store.get('ingame').active ? draftStreamUrl(link, game) : null;
-    if (link && !draftStreamUrl(link, game)) this.setStatus('error', 'Not a drafter.lol draft link (expected https://drafter.lol/draft/…)');
+    const want = link && this.settings().drafterReader && !this.blocked && !this.store.get('ingame').active ? draftStreamUrl(link, game) : null;
+    if (this.settings().drafterReader && link && !draftStreamUrl(link, game)) this.setStatus('error', 'Not a drafter.lol draft link (expected https://drafter.lol/draft/…)');
     if ((want ?? '') === this.url) return;
     this.url = want ?? '';
     if (!want) {
