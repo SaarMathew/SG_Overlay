@@ -1,0 +1,62 @@
+/* Admin panel (operator UI, not on stream). Dark, high contrast, big targets. */
+html, body { overflow: auto !important; background: #0b0714 !important; }
+
+.admin {
+  --surface: #140d22;
+  --surface-2: #1c1330;
+  --surface-3: #261a40;
+  --border: #2d2048;
+  --ok: #3ddc84;
+  --warn: #ffc94d;
+  --danger: #ff5c61;
+  --onair: #ff3b45;
+  font-size: 14px;
+  min-height: 100vh;
+}
+.admin input, .admin select {
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 8px 10px; font: inherit; min-width: 0;
+}
+.admin input:focus, .admin select:focus { outline: 2px solid var(--sg); outline-offset: -1px; }
+.admin input:disabled { opacity: .5; }
+.admin button {
+  background: var(--surface-3); border: 1px solid var(--border); color: var(--text); border-radius: 8px;
+  padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer; transition: background .12s, border-color .12s;
+}
+.admin button:hover:not(:disabled) { background: #33245a; }
+.admin button:disabled { opacity: .4; cursor: default; }
+.admin button.primary { background: var(--sg); border-color: var(--sg); color: #fff; }
+.admin button.primary:hover:not(:disabled) { background: #8a3ff0; }
+.admin button.danger { border-color: #6b2228; color: #ffb3b6; }
+.admin button.ghost { background: transparent; }
+
+.admin .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; min-width: 0; }
+.admin .card-title { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 800; letter-spacing: 1.4px;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+.admin .card-title .hint { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--dim); }
+.admin .row { display: flex; gap: 8px; align-items: center; }
+.admin .wrap { flex-wrap: wrap; }
+.admin .stack { display: flex; flex-direction: column; gap: 10px; }
+.admin .muted { color: var(--dim); }
+.admin .field { display: flex; flex-direction: column; gap: 5px; }
+.admin .field > span { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--dim); }
+.admin kbd { font: 600 10px/1 Inter, sans-serif; padding: 3px 5px; border-radius: 4px; background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12); color: var(--muted); white-space: nowrap; }
+
+/* segmented control */
+.admin .seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 3px; }
+.admin .seg button { background: transparent; border: none; padding: 8px 14px; border-radius: 7px; }
+.admin .seg button.on { background: var(--sg); color: #fff; }
+
+/* toggle switch */
+.admin .switch { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
+.admin .switch input { display: none; }
+.admin .switch .track { width: 44px; height: 24px; border-radius: 12px; background: var(--surface-3); position: relative; transition: background .15s; flex: none; }
+.admin .switch .track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.admin .switch input:checked + .track { background: var(--sg); }
+.admin .switch input:checked + .track::after { transform: translateX(20px); }
+
+.admin .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--surface-3); color: var(--muted); }
+.admin .pill.ok { background: rgba(61,220,132,.12); color: var(--ok); }
+.admin .pill.warn { background: rgba(255,201,77,.12); color: var(--warn); }
+.admin .pill.danger { background: rgba(255,92,97,.14); color: var(--danger); }

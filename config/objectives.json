@@ -1,0 +1,14 @@
+{
+  "_comment": "Objective spawn/respawn rules in seconds of game time. Patch dependent: verify against the current patch (DESIGN.md open point 5).",
+  "dragonFirst": 300,
+  "dragonRespawn": 300,
+  "elderRespawn": 360,
+  "grubsFirst": 480,
+  "heraldFirst": 960,
+  "baronFirst": 1500,
+  "baronRespawn": 360,
+  "baronBuff": 180,
+  "elderBuff": 150,
+  "atakhanFirst": 1200,
+  "showBeforeSec": 240
+}

@@ -1,0 +1,42 @@
+{
+  "name": "sg-overlay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SaarGaming e.V. broadcast overlay for League of Legends (OBS browser sources)",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n web,server -c magenta,cyan \"vite build --watch\" \"tsx watch server/main.ts --mock\"",
+    "build": "vite build",
+    "start": "tsx server/main.ts",
+    "mock": "tsx server/main.ts --mock",
+    "replay": "tsx server/main.ts --replay",
+    "ocr:learn": "tsx server/ocr/learn-cli.ts",
+    "package": "node scripts/package.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/multipart": "^10.1.6",
+    "@fastify/static": "^10.1.7",
+    "fastify": "^5.12.7",
+    "obs-websocket-js": "^5.0.8",
+    "pngjs": "^7.0.0",
+    "puppeteer-core": "^25.16.0",
+    "tsx": "^4.23.15",
+    "ws": "^8.22.0"
+  },
+  "optionalDependencies": {
+    "uiohook-napi": "^1.5.5"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@types/node": "^24.0.0",
+    "@types/pngjs": "^6.0.5",
+    "@types/ws": "^8.18.2",
+    "concurrently": "^10.0.6",
+    "svelte": "^5.57.2",
+    "typescript": "^5.9.0",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}

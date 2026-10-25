@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SG Overlay – Lineup Reveal Mockup</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* ---------- Header ---------- */
+  .head { position: absolute; top: 70px; left: 42px; right: 42px; height: 100px; display: grid; grid-template-columns: 1fr 360px 1fr; align-items: center; }
+  .ht { display: flex; align-items: center; gap: 18px; }
+  .ht.r { flex-direction: row-reverse; text-align: right; }
+  .ht .team-logo, .ht .logo-ph { width: 76px; height: 76px; }
+  .ht .logo-ph { font-size: 20px; }
+  .ht .tag { font-size: 36px; font-weight: 800; line-height: 1; }
+  .ht .name { font-size: 16px; color: var(--muted); margin-top: 4px; }
+  .hc { text-align: center; }
+  .hc .score { font-size: 52px; font-weight: 900; letter-spacing: 2px; line-height: 1; margin-top: 8px; }
+  .hc .score .s { color: var(--sg); } .hc .score .o { color: var(--opp); } .hc .score .d { color: var(--dim); margin: 0 10px; }
+
+  /* ---------- Pick cards ---------- */
+  .picks { position: absolute; top: 236px; left: 42px; right: 42px; display: flex; justify-content: space-between; }
+  .side { display: flex; gap: 12px; }
+  .card { width: 160px; border-radius: 12px; overflow: hidden; background: var(--cover); border: 1px solid var(--line);
+          position: relative; animation: rise .5s ease-out both; }
+  .card .art { width: 160px; height: 291px; display: block; object-fit: cover; }
+  .card .role { position: absolute; top: 10px; left: 10px; font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
+                background: rgba(0,0,0,.65); padding: 3px 7px; border-radius: 5px; }
+  .card .info { padding: 10px 12px 12px; border-top: 3px solid var(--sg); }
+  .side.opp .card .info { border-top-color: var(--opp); }
+  .card .pn { font-size: 17px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .cn { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 13px; color: var(--muted); }
+  .card .sp { display: flex; gap: 3px; }
+  .card .sp img { width: 20px; height: 20px; border-radius: 4px; }
+  .card.picking .art { opacity: 0; }
+  .card.picking::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 291px;
+                          background: linear-gradient(180deg, #1e1430, #100a1c); }
+  .card.picking .pending { position: absolute; top: 120px; left: 0; right: 0; text-align: center; font-size: 13px; font-weight: 800;
+                           letter-spacing: 3px; color: var(--muted); animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .vs { align-self: center; text-align: center; font-size: 30px; font-weight: 900; color: var(--dim); width: 100px; }
+
+  /* ---------- Fearless ---------- */
+  .fearless { position: absolute; left: 42px; right: 42px; top: 720px; background: var(--panel);
+              border: 1px solid var(--line); border-radius: 16px; padding: 26px 32px; animation: fade .8s .9s both; }
+  .fl-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .fl-head .eyebrow b { color: var(--sg-glow); }
+  .fl-head .note { font-size: 14px; color: var(--muted); }
+  .fl-game { display: grid; grid-template-columns: 110px 1fr 1fr; align-items: center; gap: 24px; margin-top: 22px;
+             padding-top: 22px; border-top: 1px solid var(--line); }
+  .fl-game .gl { font-size: 15px; font-weight: 800; letter-spacing: 2px; color: var(--muted); }
+  .fl-game .gl small { display: block; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--dim); margin-top: 4px; }
+  .fl-team { display: flex; gap: 14px; align-items: center; }
+  .fl-team.opp { justify-content: flex-end; }
+  .fl-team .lbl { font-size: 14px; font-weight: 800; width: 44px; }
+  .fl-team.sg .lbl { color: var(--sg); } .fl-team.opp .lbl { color: var(--opp); text-align: right; }
+  .used { text-align: center; width: 90px; }
+  .used img { width: 80px; height: 80px; border-radius: 10px; display: block; margin: 0 auto; filter: grayscale(.85) brightness(.75); }
+  .used span { display: block; font-size: 12px; color: var(--dim); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fl-empty { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--dim); font-size: 15px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="scene-bg"></div>
+
+  <div class="head">
+    <div class="ht">
+      <img class="team-logo" src="assets/saargaming-logo.png" alt="">
+      <div><div class="tag">SG</div><div class="name">SaarGaming</div></div>
+    </div>
+    <div class="hc">
+      <div class="eyebrow">Game 2 · <b>Lineups</b></div>
+      <div class="score"><span class="s">1</span><span class="d">–</span><span class="o">0</span></div>
+    </div>
+    <div class="ht r">
+      <div class="logo-ph">NLE</div>
+      <div><div class="tag">NLE</div><div class="name">Nordlicht Esports</div></div>
+    </div>
+  </div>
+
+  <div class="picks">
+    <div class="side sg" id="sg"></div>
+    <div class="vs">VS</div>
+    <div class="side opp" id="opp"></div>
+  </div>
+
+  <div class="fearless">
+    <div class="fl-head">
+      <div class="eyebrow"><b>Fearless</b> · Locked for both teams</div>
+      <div class="note">10 champions already played this series</div>
+    </div>
+    <div class="fl-game">
+      <div class="gl">GAME 1<small>SG win · 28:15</small></div>
+      <div class="fl-team sg" id="fl-sg"><div class="lbl">SG</div></div>
+      <div class="fl-team opp" id="fl-opp"><div class="lbl">NLE</div></div>
+    </div>
+  </div>
+</div>
+<script src="shared.js"></script>
+<script>
+  // Dummy data (real source: LCU champ-select session, players matched to admin rosters)
+  const DD = 'https://ddragon.leagueoflegends.com/cdn';
+  const V = '15.1.1';
+  const roles = ['TOP', 'JGL', 'MID', 'BOT', 'SUP'];
+  const sg = [
+    ['Steinbeißer', 'Aatrox', 'Aatrox', ['Flash', 'Teleport']],
+    ['Moosrücken', 'Sejuani', 'Sejuani', ['Smite', 'Flash']],
+    ['Saarlicht', 'Ahri', 'Ahri', ['Flash', 'Dot']],
+    ['Panzerkralle', 'Jinx', 'Jinx', ['Flash', 'Heal']],
+    ['Schildkröte', 'Nautilus', 'Nautilus', ['Flash', 'Exhaust']],
+  ];
+  const opp = [
+    ['Polarfuchs', 'Renekton', 'Renekton', ['Flash', 'Teleport']],
+    ['Eiswind', 'LeeSin', 'Lee Sin', ['Smite', 'Flash']],
+    ['Nordstern', 'Syndra', 'Syndra', ['Flash', 'Teleport']],
+    ['Kaltfront', 'Kaisa', "Kai'Sa", ['Flash', 'Heal']],
+    ['Polarlicht', null, null, null],              // still picking
+  ];
+  const card = ([pn, id, cn, sp], i, delay) => id ? `
+    <div class="card" style="animation-delay:${delay}s">
+      <img class="art" src="${DD}/img/champion/loading/${id}_0.jpg" alt="">
+      <div class="role">${roles[i]}</div>
+      <div class="info"><div class="pn">${pn}</div>
+        <div class="cn">${cn}<div class="sp">${sp.map(s => `<img src="${DD}/${V}/img/spell/Summoner${s}.png" alt="">`).join('')}</div></div>
+      </div>
+    </div>` : `
+    <div class="card picking" style="animation-delay:${delay}s">
+      <img class="art" alt=""><div class="role">${roles[i]}</div><div class="pending">PICKING</div>
+      <div class="info"><div class="pn">${pn}</div><div class="cn">&nbsp;</div></div>
+    </div>`;
+  const render = () => {
+    document.getElementById('sg').innerHTML = sg.map((p, i) => card(p, i, .1 + i * .08)).join('');
+    document.getElementById('opp').innerHTML = opp.map((p, i) => card(p, i, .1 + i * .08)).join('');
+  };
+  render();
+
+  // Fearless: collected automatically from previous games of the series
+  const g1 = { sg: [['KSante', "K'Sante"], ['Vi', 'Vi'], ['Orianna', 'Orianna'], ['Ezreal', 'Ezreal'], ['Braum', 'Braum']],
+               opp: [['Gnar', 'Gnar'], ['Maokai', 'Maokai'], ['Azir', 'Azir'], ['Varus', 'Varus'], ['Alistar', 'Alistar']] };
+  const used = ([id, n]) => `<div class="used"><img src="${DD}/${V}/img/champion/${id}.png" alt=""><span>${n}</span></div>`;
+  document.getElementById('fl-sg').insertAdjacentHTML('beforeend', g1.sg.map(used).join(''));
+  document.getElementById('fl-opp').insertAdjacentHTML('afterbegin', g1.opp.map(used).join(''));
+
+  addEventListener('keydown', e => { if (e.key === 'r' || e.key === 'R') render(); });
+</script>
+</body>
+</html>
