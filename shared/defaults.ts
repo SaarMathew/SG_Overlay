@@ -62,7 +62,7 @@ export function defaultState(): AppState {
     ui: { scene: null, autoScenes: true, h2hLane: null, postgamePage: 1, pauseText: 'Technical pause', replayBar: false },
     status: {
       mode: 'live', lcu: 'down', live: 'down', replayApi: 'off', obs: 'down', ocr: 'off',
-      recording: false, playback: null, gameflow: 'None', ddVersion: '', message: '',
+      recording: false, playback: null, gameflow: 'None', ddVersion: '', version: '', message: '',
     },
   };
 }

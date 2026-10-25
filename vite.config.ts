@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { resolve } from 'node:path';
+import { appVersion } from './server/version.ts';
 
 const web = resolve(import.meta.dirname, 'web');
 const pages = ['admin', 'overlay/starting-soon', 'overlay/draft', 'overlay/lineup', 'overlay/ingame', 'overlay/postgame', 'overlay/pause'];
@@ -10,6 +11,8 @@ export default defineConfig({
   root: web,
   base: '/',
   plugins: [svelte()],
+  // the admin page compares this with the running server's version (stale page / old server warning)
+  define: { __APP_VERSION__: JSON.stringify(appVersion()) },
   build: {
     outDir: resolve(import.meta.dirname, 'dist/web'),
     emptyOutDir: true,

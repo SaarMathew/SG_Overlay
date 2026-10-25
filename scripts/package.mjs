@@ -30,6 +30,13 @@ for (const p of ['dist', 'server', 'shared', 'config', 'package.json', 'package-
   fs.cpSync(path.join(root, p), path.join(out, p), { recursive: true });
 }
 
+// the packaged server has no .git: it reads its version (same as the built pages) from version.txt
+const git = cmd => execSync(cmd, { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+let version;
+try { version = git('git rev-parse --short HEAD') + (git('git status --porcelain --untracked-files=no') ? '+changes' : ''); }
+catch { version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version; }
+fs.writeFileSync(path.join(out, 'version.txt'), version);
+
 console.log('> installing production dependencies');
 run('npm ci --omit=dev --no-audit --no-fund', out);
 

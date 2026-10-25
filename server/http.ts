@@ -24,7 +24,18 @@ export async function createHttp(deps: HttpDeps): Promise<FastifyInstance> {
   fs.mkdirSync(LOGO_DIR, { recursive: true });
 
   await app.register(multipart, { limits: { fileSize: 8 * 1024 * 1024 } });
-  await app.register(fastifyStatic, { root: WEB_DIST, prefix: '/', redirect: true, cacheControl: false });
+  await app.register(fastifyStatic, {
+    root: WEB_DIST, prefix: '/', redirect: true, cacheControl: false,
+    // Pages and un-hashed files must be revalidated (else OBS/browsers keep showing an old version after
+    // an update); bundles with a content hash in their name never change and may be cached for good.
+    setHeaders: (res, file) => {
+      const hashed = /-[A-Za-z0-9_-]{8}\.(js|css)$/.test(file);
+      const value = hashed ? 'public, max-age=31536000, immutable' : 'no-cache';
+      // depending on the plugin version this is the raw response or the Fastify reply
+      const r = res as unknown as { setHeader?: (k: string, v: string) => void; header?: (k: string, v: string) => void };
+      if (r.setHeader) r.setHeader('Cache-Control', value); else r.header?.('Cache-Control', value);
+    },
+  });
   await app.register(fastifyStatic, { root: LOGO_DIR, prefix: '/data/logos/', decorateReply: false });
 
   app.get('/', (_req, reply) => reply.redirect('/admin/'));

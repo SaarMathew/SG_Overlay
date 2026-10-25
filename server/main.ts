@@ -19,6 +19,7 @@ import { Hub } from './hub.ts';
 import { createHttp } from './http.ts';
 import { hotkeyAction, runAction, type ActionContext } from './actions.ts';
 import { log } from './log.ts';
+import { appVersion } from './version.ts';
 
 const { values: args } = parseArgs({
   options: {
@@ -49,7 +50,7 @@ await dd.init();
 const mode = args.mock ? 'mock' : args.replay ? 'replay' : 'live';
 store.update('status', s => {
   const real = mode === 'live';
-  Object.assign(s, { mode, ddVersion: dd.version, recording: false, ocr: 'off', lcu: real ? 'down' : 'off', live: real ? 'down' : 'off', obs: 'down', replayApi: 'off', message: '' });
+  Object.assign(s, { mode, ddVersion: dd.version, version: appVersion(), recording: false, ocr: 'off', lcu: real ? 'down' : 'off', live: real ? 'down' : 'off', obs: 'down', replayApi: 'off', message: '' });
 });
 // a restart must not resume a finished/running game, nor show a head-to-head left open before the restart
 store.update('ingame', g => { g.active = false; });
@@ -125,7 +126,17 @@ const app = await createHttp({
   store, settings: getSettings, ocr, action,
   setSettings: s => { settings = s; void obs.reconnect(); },
 });
-await app.listen({ port: settings.port, host: '127.0.0.1' });
+try {
+  await app.listen({ port: settings.port, host: '127.0.0.1' });
+} catch (e) {
+  // usually an older instance still running (its window is still open) – the browser would show that old version
+  if ((e as NodeJS.ErrnoException).code === 'EADDRINUSE') {
+    log.error('main', `Port ${settings.port} is already in use – SG Overlay is probably still running in another window. Close it and start again.`);
+  } else {
+    log.error('main', `could not start the web server: ${(e as Error).message}`);
+  }
+  process.exit(1);
+}
 new Hub(app.server, store, action);
 
 if (mode === 'live') {
@@ -158,5 +169,5 @@ if (!args['no-hotkeys']) {
 }
 
 const base = `http://127.0.0.1:${settings.port}`;
-log.info('main', `SG Overlay running (${mode}) – admin: ${base}/admin/`);
+log.info('main', `SG Overlay ${appVersion()} running (${mode}) – admin: ${base}/admin/`);
 log.info('main', `overlays: ${['starting-soon', 'lineup', 'ingame', 'postgame', 'pause'].map(s => `${base}/overlay/${s}/`).join('  ')}`);

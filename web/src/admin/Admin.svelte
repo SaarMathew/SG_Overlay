@@ -23,6 +23,8 @@
   const HEALTH: [string, (s: NonNullable<typeof app.status>) => Health][] = [
     ['Client', s => s.lcu], ['Live API', s => s.live], ['Replay API', s => s.replayApi], ['OBS', s => s.obs], ['Gold OCR', s => s.ocr],
   ];
+  // after "git pull" an old server window or a cached page would otherwise go unnoticed
+  const versionMismatch = $derived(!!app.status?.version && app.status.version !== __APP_VERSION__);
   const cls = (h: Health) => (h === 'ok' ? 'ok' : h === 'warn' ? 'warn' : h === 'down' ? 'danger' : '');
   const phase = $derived.by(() => {
     if (app.ingame?.active) return app.ingame.paused ? 'Game paused' : 'Game running';
@@ -38,7 +40,7 @@
       <img src="/assets/saargaming-logo.png" alt="" />
       <div>
         <div class="name">SG Overlay</div>
-        <div class="mode">{app.status?.mode === 'live' ? 'Live' : app.status?.mode ?? ''} · {phase}</div>
+        <div class="mode">{app.status?.mode === 'live' ? 'Live' : app.status?.mode ?? ''} · {phase} · <span title="version">v{__APP_VERSION__}</span></div>
       </div>
     </div>
     <nav>
@@ -58,8 +60,14 @@
     </div>
   </header>
 
-  {#if app.status?.message || app.error}
+  {#if app.status?.message || app.error || versionMismatch}
     <div class="banners">
+      {#if versionMismatch}
+        <div class="banner danger">
+          Version mismatch: this page is v{__APP_VERSION__}, the server runs v{app.status?.version}.
+          Close all SG Overlay windows, start <b>start-with-recording.bat</b> again, then reload this page (Ctrl+F5) and the OBS browser sources.
+        </div>
+      {/if}
       {#if app.status?.message}<div class="banner warn">{app.status.message}</div>{/if}
       {#if app.error}<div class="banner danger">{app.error}</div>{/if}
     </div>

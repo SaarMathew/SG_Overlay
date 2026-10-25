@@ -200,6 +200,8 @@ export interface StatusState {
   playback: { time: number; length: number; paused: boolean; speed: number } | null;
   gameflow: string;
   ddVersion: string;
+  /** version of the running server (git commit or release version) */
+  version: string;
   message: string;
 }
 

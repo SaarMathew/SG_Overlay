@@ -6,6 +6,14 @@ OBS-Overlays für die Prime-League-Matches von SaarGaming e.V. (League of Legend
 
 `npm run package` erzeugt `release/SG-Overlay.zip` (inkl. Node.js, nichts weiter zu installieren). ZIP an einen kurzen Pfad entpacken, z. B. `C:\SG-Overlay` oder den Desktop – nicht in einen tief verschachtelten Ordner (Windows-Pfadlänge).
 
+## Update (Repo-Version mit installiertem Node.js)
+
+1. **Alle SG-Overlay-Konsolenfenster schließen** (läuft noch ein altes, bleibt die alte Version aktiv).
+2. `git pull`
+3. `start-with-recording.bat` starten – installiert geänderte Abhängigkeiten und baut die Overlays automatisch neu.
+
+Die aktuelle Version steht im Admin-Panel oben links (z. B. `v0d468c4`). Passen Seite und Server nicht zusammen, zeigt das Admin-Panel eine rote Warnung. OBS lädt die Overlay-Quellen beim Verbinden automatisch neu.
+
 ## Spieltag
 
 1. OBS starten (Szenen siehe unten), League-Client mit dem Zuschauer-Account öffnen.

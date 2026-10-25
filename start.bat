@@ -15,8 +15,17 @@ where node >nul 2>nul || (
   pause
   exit /b 1
 )
-if not exist node_modules call npm install
-if not exist dist\web\admin\index.html call npm run build
+rem After "git pull": reinstall dependencies when package-lock.json changed, and always rebuild the
+rem overlays/admin (a few seconds) so the browser and OBS never get the previous version.
+set "NEEDINSTALL="
+if not exist node_modules\.sg-lock (set NEEDINSTALL=1) else (fc /b package-lock.json node_modules\.sg-lock >nul || set NEEDINSTALL=1)
+if defined NEEDINSTALL (
+  echo Installing dependencies...
+  call npm install --no-audit --no-fund || (echo npm install failed & pause & exit /b 1)
+  copy /y package-lock.json node_modules\.sg-lock >nul
+)
+echo Building overlays...
+call npm run build --silent || (echo Build failed & pause & exit /b 1)
 start "" http://127.0.0.1:3210/admin/
 call npx tsx server/main.ts %*
 pause
