@@ -1,5 +1,6 @@
 <script lang="ts">
   import { connect } from '../lib/state.svelte.ts';
+  import { orient } from '../lib/orient.ts';
   import Stage from '../lib/Stage.svelte';
   import TeamLogo from '../lib/TeamLogo.svelte';
   import { champIcon, champLoading, spellIcon } from '../lib/dd.ts';
@@ -7,7 +8,8 @@
   import { fmtTime } from '../../../shared/calc.ts';
   import type { DraftPick, LineupPick } from '../../../shared/types.ts';
 
-  const { state: app } = connect(['match', 'series', 'lineup', 'draft', 'status']);
+  const { state: raw } = connect(['match', 'series', 'lineup', 'draft', 'status', 'ui']);
+  const app = $derived(orient(raw));
   const m = $derived(app.match);
   const s = $derived(app.series);
   const v = $derived(app.status?.ddVersion || '15.1.1');

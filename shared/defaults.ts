@@ -11,6 +11,7 @@ export function defaultMatch(): MatchConfig {
     rosterA: [],
     rosterB: [],
     sideA: 'auto',
+    layout: 'auto',
     leagueLine: 'Prime League',
     format: 3,
     caster: '',
@@ -47,7 +48,7 @@ export function emptyIngame(): IngameState {
   return {
     active: false, gameTime: 0, receivedAt: 0, paused: false,
     a: emptyTeam('ORDER'), b: emptyTeam('CHAOS'), goldSource: 'items',
-    timers: [], popups: [], goldHistory: [], playerGoldHistory: [],
+    timers: [], popups: [], goldHistory: [], playerGoldHistory: [], fights: [],
   };
 }
 
@@ -59,7 +60,7 @@ export function defaultState(): AppState {
     lineup: { active: false, a: ROLES.map(emptyPick), b: ROLES.map(emptyPick) },
     ingame: emptyIngame(),
     postgame: { active: false, durationSec: 0, winnerGuess: null, winner: null, a: null, b: null, goldHistory: [], gold15: null, events: [] },
-    ui: { scene: null, autoScenes: true, h2hLane: null, postgamePage: 1, pauseText: 'Technical pause', replayBar: false },
+    ui: { scene: null, autoScenes: true, h2hLane: null, postgamePage: 1, pauseText: 'Technical pause', replayBar: false, aRight: false, fightRecap: null },
     status: {
       mode: 'live', lcu: 'down', live: 'down', replayApi: 'off', obs: 'down', ocr: 'off',
       recording: false, playback: null, gameflow: 'None', ddVersion: '', version: '', message: '',

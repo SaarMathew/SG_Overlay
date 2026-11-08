@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { PNG } from 'pngjs';
 import { describe, expect, it } from 'vitest';
-import { emptyTemplates, learn, loadTemplates, parseGold, recognize, toGray, type Gray } from '../server/ocr/matcher.ts';
+import { emptyTemplates, learn, loadTemplates, parseCs, parseGold, recognize, toGray, type Gray } from '../server/ocr/matcher.ts';
 
 // Tiny 3x5 bitmap font, rendered at 2x into a dark image (stands in for Riot's HUD font)
 const FONT: Record<string, string[]> = {
@@ -62,5 +62,27 @@ describe('gold OCR on real spectator crops', () => {
       const text = recognize(toGray(png.data, png.width, 0, 0, png.width, png.height), 140, templates);
       expect(text, f).toBe(f.replace(/^\d+_/, '').replace(/\.png$/, ''));
     }
+  });
+});
+
+describe('exact CS OCR on crops of the reference spectator screenshots', () => {
+  // tests/fixtures/ocr-cs/<n>_<cs>.png: the CS regions (settings csOrder/csChaos) cut from mockups/assets/spectator-*.webp
+  const dir = path.resolve(import.meta.dirname, 'fixtures', 'ocr-cs');
+  const templates = loadTemplates(JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, '..', 'config', 'ocr-templates.json'), 'utf8')));
+  const files = fs.readdirSync(dir).filter(f => f.endsWith('.png'));
+
+  it('reads every CS crop with the shipped (gold) templates', () => {
+    expect(files.length).toBe(20);
+    for (const f of files) {
+      const png = PNG.sync.read(fs.readFileSync(path.join(dir, f)));
+      const text = recognize(toGray(png.data, png.width, 0, 0, png.width, png.height), 140, templates);
+      expect(parseCs(text), f).toBe(Number(f.replace(/^\d+_/, '').replace(/\.png$/, '')));
+    }
+  });
+  it('parseCs accepts only 1-3 plain digits', () => {
+    expect(parseCs('16')).toBe(16);
+    expect(parseCs('?6')).toBeNull();
+    expect(parseCs('1234')).toBeNull();
+    expect(parseCs('')).toBeNull();
   });
 });

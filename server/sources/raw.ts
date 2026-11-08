@@ -63,7 +63,11 @@ export interface ChampSelectSession {
 }
 
 /** OCR result per scoreboard row: [current, total] or null if unreadable. */
-export interface GoldReading { order: ([number, number] | null)[]; chaos: ([number, number] | null)[] }
+export interface GoldReading {
+  order: ([number, number] | null)[]; chaos: ([number, number] | null)[];
+  /** exact CS per row (absent in older recordings / when the CS regions are not read) */
+  cs?: { order: (number | null)[]; chaos: (number | null)[] };
+}
 
 export interface SourceEvents {
   gameflow: [phase: string];

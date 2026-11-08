@@ -77,8 +77,8 @@ export async function createHttp(deps: HttpDeps): Promise<FastifyInstance> {
     return { ...res, templates: Object.keys(deps.ocr!.templates.chars).sort().join('') };
   });
 
-  app.post<{ Body: { frameId: number; side: 'order' | 'chaos'; row: number; label: string } }>('/api/ocr/learn', async (req, reply) => {
-    const ok = deps.ocr?.learnRow(req.body.frameId, req.body.side, req.body.row, req.body.label);
+  app.post<{ Body: { frameId: number; side: 'order' | 'chaos'; row: number; label: string; kind?: 'gold' | 'cs' } }>('/api/ocr/learn', async (req, reply) => {
+    const ok = deps.ocr?.learnRow(req.body.frameId, req.body.side, req.body.row, req.body.label, req.body.kind === 'cs' ? 'cs' : 'gold');
     if (!ok) return reply.code(400).send({ error: 'Glyph count does not match the label – type exactly what the crop shows' });
     return { ok: true };
   });

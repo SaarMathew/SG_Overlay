@@ -23,10 +23,10 @@ const player = (name: string, team: 'ORDER' | 'CHAOS', kills = 0): RawPlayer => 
 function setup() {
   const store = new Store(path.join(os.tmpdir(), `sg-test-${Math.random()}.json`));
   const bus = new SourceBus();
-  new Pipeline(store, bus, new DataDragon(), rules);
+  const pipeline = new Pipeline(store, bus, new DataDragon(), rules);
   // team A (SG) = sg1..sg5 plays red
   store.update('match', m => { m.rosterA = ROLES.map((role, i) => ({ riotId: `sg${i + 1}`, displayName: '', role })); });
-  return { store, bus };
+  return { store, bus, pipeline };
 }
 
 const game = (t: number, events: RawEvent[]): AllGameData => ({
@@ -92,5 +92,87 @@ describe('pipeline', () => {
     expect(pg.active).toBe(true);
     expect(pg.durationSec).toBe(900);
     expect(store.get('ingame').active).toBe(false);
+  });
+
+  it('uses exact OCR CS only when it fits the API value (steps of 10) and never lets it drop', () => {
+    const { store, bus } = setup();
+    const gold = Array.from({ length: 5 }, () => null);
+    const cs = (v: number | null) => ({ order: [v, v, v, v, v], chaos: [v, 87, null, v, v] });
+    const sgCs = () => store.get('ingame').a.players.map(p => p.cs);
+    bus.emit('live', game(899, []));                 // creepScore is 50 for everyone
+    bus.emit('gold', { order: gold, chaos: gold, cs: cs(57) });
+    bus.emit('live', game(900, []));
+    expect(sgCs()).toEqual([57, 50, 50, 57, 57]);    // 87 does not fit 50 -> API value, row 2 unreadable -> API
+    bus.emit('gold', { order: gold, chaos: gold, cs: cs(49) });   // would drop below 57 (and lags: 40 vs 50 is one step)
+    bus.emit('live', game(901, []));
+    expect(sgCs()).toEqual([57, 50, 50, 57, 57]);
+    bus.emit('gold', { order: gold, chaos: gold, cs: cs(61) });   // one step ahead of the API: fine
+    bus.emit('live', game(902, []));
+    expect(sgCs()).toEqual([61, 50, 50, 61, 61]);
+    bus.emit('gold', { order: gold, chaos: gold }); // old recording without CS: falls back to the API value
+    bus.emit('live', game(903, []));
+    expect(sgCs()).toEqual([61, 50, 50, 61, 61]);   // reading still fresh
+    for (let t = 904; t < 908; t++) bus.emit('live', game(t, []));
+    expect(sgCs()).toEqual([50, 50, 50, 50, 50]);   // stale, and 61 no longer fits the API value
+  });
+
+  describe('dragon attribution', () => {
+    const drake = (id: number, killer: string | undefined, type = 'Fire', extra: Partial<RawEvent> = {}): RawEvent =>
+      ({ EventID: id, EventName: 'DragonKill', EventTime: 400 + id, DragonType: type, Stolen: 'False', KillerName: killer, ...extra });
+
+    it('maps every current DragonType spelling and keeps the order', () => {
+      const { store, bus } = setup();
+      const types = ['Fire', 'Water', 'Earth', 'Air'];
+      bus.emit('live', game(900, types.map((t, i) => drake(i + 1, 'sg1', t))));
+      expect(store.get('ingame').a.dragons).toEqual(['infernal', 'ocean', 'mountain', 'cloud']);
+      const s2 = setup();
+      s2.bus.emit('live', game(900, [drake(1, 'sg1', 'Hextech'), drake(2, 'opp1', 'Chemtech'), drake(3, 'sg1', 'Elder')]));
+      expect(s2.store.get('ingame').a.dragons).toEqual(['hextech']);
+      expect(s2.store.get('ingame').b.dragons).toEqual(['chemtech']);
+      expect(s2.store.get('ingame').a.elders).toBe(1);
+    });
+
+    it('does not mislabel an unknown DragonType', () => {
+      const { store, bus } = setup();
+      bus.emit('live', game(900, [drake(1, 'sg1', 'Sparkle')]));
+      expect(store.get('ingame').a.dragons).toEqual([]);
+    });
+
+    it('resolves the killer by champion name, apostrophes, case and tag, and falls back to assisters', () => {
+      const { store, bus } = setup();
+      const data = game(900, [
+        drake(1, 'SG1#EUW'), drake(2, '  Sg2 '),
+        drake(3, 'SRU_Minion_Whatever', 'Water', { Assisters: ['opp3'] }),
+        drake(4, 'Minion_T100', 'Earth'),
+      ]);
+      data.allPlayers[5].championName = "Kai'Sa";
+      data.allPlayers[5].riotIdGameName = 'Blackroocky';
+      data.events!.Events.push(drake(5, 'Kaisa', 'Air'), drake(6, "kai'sa", 'Hextech'));
+      bus.emit('live', data);
+      const g = store.get('ingame');
+      expect(g.a.dragons).toEqual(['infernal', 'infernal', 'cloud', 'hextech']);
+      expect(g.b.dragons).toEqual(['ocean']);
+    });
+
+    it('counts events that arrive in a later poll or out of order once, also after repeats', () => {
+      const { store, bus } = setup();
+      bus.emit('live', game(500, [drake(5, 'sg1'), { EventID: 6, EventName: 'MinionsSpawning', EventTime: 10 }]));
+      bus.emit('live', game(510, [drake(3, 'sg1', 'Water'), drake(5, 'sg1'), drake(7, 'sg1', 'Earth')]));
+      bus.emit('live', game(520, [drake(3, 'sg1', 'Water'), drake(7, 'sg1', 'Earth')]));
+      expect(store.get('ingame').a.dragons).toEqual(['infernal', 'ocean', 'mountain'].filter((_, i) => i !== 0 || true).sort((x, y) => 0) && ['infernal', 'ocean', 'mountain']);
+    });
+  });
+
+  it('credits manual objectives from the admin panel to counters and timers', () => {
+    const { store, bus, pipeline } = setup();
+    bus.emit('live', game(800, []));          // team A = CHAOS
+    pipeline.manualObjective('A', 'dragon', 'Water');
+    pipeline.manualObjective('B', 'baron');
+    bus.emit('live', game(801, []));
+    const g = store.get('ingame');
+    expect(g.a.dragons).toEqual(['ocean']);
+    expect(g.b.barons).toBe(1);
+    expect(g.timers.find(t => t.kind === 'baronBuff')?.team).toBe('B');
+    expect(g.popups.length).toBe(2);
   });
 });

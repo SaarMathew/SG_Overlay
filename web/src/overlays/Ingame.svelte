@@ -1,13 +1,17 @@
 <script lang="ts">
   import { connect } from '../lib/state.svelte.ts';
+  import { orient } from '../lib/orient.ts';
   import Stage from '../lib/Stage.svelte';
   import TopBar from './ingame/TopBar.svelte';
   import Scoreboard from './ingame/Scoreboard.svelte';
   import HeadToHead from './ingame/HeadToHead.svelte';
+  import FightRecap from './ingame/FightRecap.svelte';
   import { fmtTime } from '../../../shared/calc.ts';
+  import type { Fight } from '../../../shared/types.ts';
   import { ROLES } from '../../../shared/types.ts';
 
-  const { state: app } = connect(['match', 'series', 'ingame', 'ui', 'status']);
+  const { state: raw } = connect(['match', 'series', 'ingame', 'status', 'ui']);
+  const app = $derived(orient(raw));
 
   // Interpolate the game clock between the 1 Hz polls so timers tick smoothly.
   let now = $state(Date.now());
@@ -20,6 +24,12 @@
   const g = $derived(app.ingame);
   const clock = $derived(g ? (g.paused ? g.gameTime : g.gameTime + Math.min(2, Math.max(0, (now - g.receivedAt) / 1000))) : 0);
   const popup = $derived(g?.popups.find(p => p.from <= now && p.until > now) ?? null);
+  const recap = $derived.by(() => {
+    const r = app.ui?.fightRecap;
+    return r && r.until > now ? g?.fights?.find(f => f.id === r.id) ?? null : null;
+  });
+  let lastRecap = $state<Fight | null>(null);
+  $effect(() => { if (recap) lastRecap = recap; });
   const v = $derived(app.status?.ddVersion || '15.1.1');
   const lane = $derived(app.ui?.h2hLane ?? null);
   const laneIdx = $derived(lane ? ROLES.indexOf(lane) : -1);
@@ -68,11 +78,14 @@
       {#key lane}<HeadToHead ingame={g} idx={laneIdx} {v} />{/key}
     {/if}
 
-    <Scoreboard ingame={g} {v} focus={laneIdx} />
+    <div class="swap" class:away={!!recap}><Scoreboard ingame={g} {v} focus={laneIdx} /></div>
+    {#if lastRecap}<FightRecap fight={recap ?? lastRecap} ingame={g} match={app.match} {v} shown={!!recap} />{/if}
   {/if}
 </Stage>
 
 <style>
+  .swap { position: absolute; inset: 0; pointer-events: none; transition: transform .3s cubic-bezier(.2,.8,.2,1), opacity .3s; }
+  .swap.away { transform: translateY(100%); opacity: 0; }
   .debug-bg { position: absolute; inset: 0; background: #111 url(/assets/spectator-midgame.webp) 0 0 / 1920px 1080px no-repeat; }
 
   .timers { position: absolute; top: 116px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; }

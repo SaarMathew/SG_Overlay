@@ -15,6 +15,7 @@ import { Recorder, replay } from './recorder.ts';
 import { MockSource } from './sources/mock.ts';
 import { Hotkeys } from './hotkeys.ts';
 import { DrafterService } from './drafter/service.ts';
+import { wireLayout } from './layout.ts';
 import { Hub } from './hub.ts';
 import { createHttp } from './http.ts';
 import { hotkeyAction, runAction, type ActionContext } from './actions.ts';
@@ -56,7 +57,8 @@ store.update('status', s => {
 store.update('ingame', g => { g.active = false; });
 store.update('ui', u => { u.h2hLane = null; });
 
-new Pipeline(store, bus, dd, loadObjectiveRules());
+wireLayout(store);
+const pipeline = new Pipeline(store, bus, dd, loadObjectiveRules());
 const obs = new ObsAdapter(store, getSettings);
 const recorder = new Recorder(bus);
 const ocr = mode === 'live' ? new GoldOcr(bus, store, obs, getSettings) : null;
@@ -118,6 +120,7 @@ const ctx: ActionContext = {
     enableReplayApi(settings.leagueDir);
     store.update('status', s => { s.replayApi = 'warn'; s.message = 'Replay API enabled in game.cfg – takes effect with the next game start'; });
   },
+  objective: (team, kind, dragon) => pipeline.manualObjective(team, kind, dragon),
   recorder: { toggle: () => (recorder.active ? (recorder.end(), false) : (recorder.begin(), true)) },
 };
 const action = (name: string, payload: unknown) => runAction(ctx, name, payload);

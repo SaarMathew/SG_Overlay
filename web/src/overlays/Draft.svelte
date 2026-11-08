@@ -1,12 +1,14 @@
 <script lang="ts">
   import { connect } from '../lib/state.svelte.ts';
+  import { orient } from '../lib/orient.ts';
   import Stage from '../lib/Stage.svelte';
   import TeamLogo from '../lib/TeamLogo.svelte';
   import { draftStreamUrl } from '../../../shared/draft.ts';
 
   // Pick & ban scene: our branded background and centre block, with drafter.lol's official
   // transparent stream view (picks left/right, bans bottom, Fearless bottom centre) on top.
-  const { state: app } = connect(['match', 'series']);
+  const { state: raw } = connect(['match', 'series', 'ui']);
+  const app = $derived(orient(raw));
   const m = $derived(app.match);
   const s = $derived(app.series);
   const url = $derived(m && s && m.draftUrl ? draftStreamUrl(m.draftUrl, s.gameNumber) : null);

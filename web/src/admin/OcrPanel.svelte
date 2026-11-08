@@ -1,7 +1,7 @@
 <script lang="ts">
   import Section from './Section.svelte';
 
-  interface Row { side: 'order' | 'chaos'; row: number; text: string; value: [number, number] | null; png: string }
+  interface Row { kind: 'gold' | 'cs'; side: 'order' | 'chaos'; row: number; text: string; value: [number, number] | number | null; png: string }
   let rows = $state<Row[]>([]);
   let frameId = $state(0);
   let templates = $state('');
@@ -20,15 +20,17 @@
   }
 
   async function learn(r: Row) {
-    const key = `${r.side}${r.row}`;
+    const key = rowKey(r);
     // learns from exactly the crop shown here (frameId), not from a newer frame
     const res = await fetch('/api/ocr/learn', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ frameId, side: r.side, row: r.row, label: labels[key] ?? '' }),
+      body: JSON.stringify({ frameId, kind: r.kind, side: r.side, row: r.row, label: labels[key] ?? '' }),
     });
     if (!res.ok) error = (await res.json()).error;
     else await refresh();
   }
+
+  const rowKey = (r: Row) => `${r.kind}${r.side}${r.row}`;
 
   async function reset() {
     if (!confirm('Forget glyphs learned on this PC? The built-in ones stay.')) return;
@@ -37,10 +39,11 @@
   }
 </script>
 
-<Section title="Gold OCR check" hint="needs OBS + a spectated game">
+<Section title="Gold / CS OCR check" hint="needs OBS + a spectated game">
   <p class="muted">
     The digits are built in. Open Riot's scoreboard in the spectated game and press Refresh: green rows are read correctly.
-    Only if a row stays red, type exactly what that crop shows (e.g. <code>215(716)</code>) and press Learn.
+    Only if a row stays red, type exactly what that crop shows (e.g. <code>215(716)</code>, or <code>16</code> for a CS row) and press Learn.
+    CS rows are the yellow numbers beside the portraits (the exact creep score; the game API only gives steps of 10).
   </p>
   <div class="row">
     <button onclick={refresh}>Refresh crops</button>
@@ -48,13 +51,13 @@
     <span class="muted">Known glyphs: {templates || '–'}</span>
   </div>
   {#if error}<div class="err">{error}</div>{/if}
-  {#each rows as r (r.side + r.row)}
+  {#each rows as r (rowKey(r))}
     <div class="row crop">
-      <span class="side">{r.side === 'order' ? 'Blue' : 'Red'} {r.row + 1}</span>
+      <span class="side">{r.kind === 'cs' ? 'CS ' : ''}{r.side === 'order' ? 'Blue' : 'Red'} {r.row + 1}</span>
       <img src="data:image/png;base64,{r.png}" alt="" />
-      <span class="read" class:ok={r.value}>{r.text || '—'}</span>
-      {#if !r.value}
-        <input placeholder="label" bind:value={labels[r.side + r.row]} style="width:110px" />
+      <span class="read" class:ok={r.value !== null}>{r.text || '—'}</span>
+      {#if r.value === null}
+        <input placeholder="label" bind:value={labels[rowKey(r)]} style="width:110px" />
         <button onclick={() => learn(r)}>Learn</button>
       {/if}
     </div>
@@ -65,7 +68,7 @@
   .row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
   .muted { color: var(--dim); font-size: 13px; }
   .err { color: #ff8f93; margin: 6px 0; }
-  .side { width: 52px; font-size: 12px; color: var(--muted); }
+  .side { width: 70px; font-size: 12px; color: var(--muted); }
   .crop img { height: 24px; image-rendering: pixelated; background: #000; border-radius: 3px; }
   .read { width: 100px; font-family: monospace; color: #ff8f93; }
   .read.ok { color: #7dffa8; }

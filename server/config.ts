@@ -23,6 +23,9 @@ export interface Settings {
     /** gold text of Riot's spectator scoreboard, one region per row; left column = ORDER, right = CHAOS */
     order: OcrRegion[];
     chaos: OcrRegion[];
+    /** exact CS (yellow number beside the portrait; the live API only reports multiples of 10) */
+    csOrder: OcrRegion[];
+    csChaos: OcrRegion[];
     threshold: number;                     // luminance 0..255 above which a pixel counts as text
   };
   hotkeys: Record<string, string>;         // action -> combo, e.g. "h2h:TOP": "Ctrl+Alt+1"
@@ -33,6 +36,9 @@ export interface Settings {
 }
 
 const rows = (x: number) => [875, 919, 963, 1007, 1051].map(cy => ({ x, y: cy - 12, w: 150, h: 24 }));
+
+// CS is centred next to the portrait (x ~896 left team, ~1036 right team); 48 px fits three digits
+const csRows = (x: number) => [875, 919, 963, 1007, 1051].map(cy => ({ x, y: cy - 12, w: 48, h: 24 }));
 
 export const DEFAULT_SETTINGS: Settings = {
   port: 3210,
@@ -48,18 +54,19 @@ export const DEFAULT_SETTINGS: Settings = {
     interfaceTimeline: false,
     interfaceNeutralTimers: false,
     interfaceTarget: false,
+    interfaceAnnounce: false,   // Riot's centre banners; our popups replace them (kill feed stays)
     interfaceScore: true,
     interfaceScoreboard: true,
     interfaceFrames: true,
     interfaceMinimap: true,
   },
   applyReplayRender: true,
-  ocr: { enabled: true, intervalMs: 2000, order: rows(640), chaos: rows(1150), threshold: 140 },
+  ocr: { enabled: true, intervalMs: 2000, order: rows(640), chaos: rows(1150), csOrder: csRows(868), csChaos: csRows(1018), threshold: 140 },
   hotkeys: {
     'h2h:TOP': 'Ctrl+Alt+1', 'h2h:JGL': 'Ctrl+Alt+2', 'h2h:MID': 'Ctrl+Alt+3', 'h2h:BOT': 'Ctrl+Alt+4', 'h2h:SUP': 'Ctrl+Alt+5',
     'h2h:off': 'Ctrl+Alt+0', 'postgame:page': 'Ctrl+Alt+P', 'scenes:auto': 'Ctrl+Alt+A', 'scene:pause': 'Ctrl+Alt+F9',
     'replay:back10': 'Ctrl+Alt+ArrowLeft', 'replay:fwd10': 'Ctrl+Alt+ArrowRight', 'replay:pause': 'Ctrl+Alt+Space',
-    'replay:live': 'Ctrl+Alt+End', 'replay:bar': 'Ctrl+Alt+R',
+    'replay:live': 'Ctrl+Alt+End', 'replay:bar': 'Ctrl+Alt+R', 'fight:show': 'Ctrl+Alt+F',
   },
   postgameDelayMs: 3000,
   browserPath: '',

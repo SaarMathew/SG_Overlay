@@ -1,12 +1,14 @@
 <script lang="ts">
   import { connect } from '../lib/state.svelte.ts';
+  import { orient } from '../lib/orient.ts';
   import Stage from '../lib/Stage.svelte';
   import TeamLogo from '../lib/TeamLogo.svelte';
   import { champIcon, itemIcon } from '../lib/dd.ts';
   import { fmtGold, fmtTime, killParticipation, playerGold } from '../../../shared/calc.ts';
   import { ROLES, type PlayerLive, type TeamKey, type TeamLive } from '../../../shared/types.ts';
 
-  const { state: app } = connect(['match', 'series', 'postgame', 'ui', 'status']);
+  const { state: raw } = connect(['match', 'series', 'postgame', 'status', 'ui']);
+  const app = $derived(orient(raw));
   const m = $derived(app.match);
   const s = $derived(app.series);
   const pg = $derived(app.postgame);

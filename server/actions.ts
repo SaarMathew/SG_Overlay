@@ -3,6 +3,7 @@ import { ROLES } from '../shared/types.ts';
 import { SG_TEAM, defaultSeries } from '../shared/defaults.ts';
 import type { Store } from './state/store.ts';
 import type { SceneController } from './scenes.ts';
+import type { ManualObjective } from './ingest/pipeline.ts';
 import { log } from './log.ts';
 
 export interface ActionContext {
@@ -11,6 +12,7 @@ export interface ActionContext {
   applyHud: () => Promise<boolean>;
   enableReplayApi: () => void;
   recorder: { toggle: () => boolean };
+  objective: (team: TeamKey, kind: ManualObjective, dragon?: string) => void;
   playback: {
     seek: (delta: number) => Promise<boolean>;
     jump: (time: number) => Promise<boolean>;
@@ -19,6 +21,8 @@ export interface ActionContext {
     set: (p: { speed?: number; paused?: boolean }) => Promise<boolean>;
   };
 }
+
+const FIGHT_RECAP_MS = 12_000;
 
 const notAvailable = (ok: boolean) => {
   if (!ok) throw new Error('Replay API not reachable – is a game being spectated and the Replay API enabled (Setup tab)?');
@@ -125,6 +129,19 @@ export const ACTIONS: Record<string, Handler> = {
 
   'gamecfg:enableReplayApi': ({ enableReplayApi }) => enableReplayApi(),
 
+  /** Manual objective when the spectator feed sends no objective events (dragon: Fire/Water/Earth/Air/Hextech/Chemtech/Elder). */
+  'game:objective': ({ objective }, p: { team: TeamKey; kind: ManualObjective; dragon?: string }) => objective(p.team, p.kind, p.dragon),
+
+  /** Fight recap on the overlay: only ever shown by the operator. Default = the most recent fight. */
+  'fight:show': ({ store }, p?: { id?: number }) => {
+    const fights = store.get('ingame').fights;
+    const f = p?.id !== undefined ? fights.find(x => x.id === p.id) : fights.at(-1);
+    if (!f) throw new Error('No fight to show yet');
+    store.update('ui', u => { u.fightRecap = { id: f.id, until: Date.now() + FIGHT_RECAP_MS }; });
+  },
+
+  'fight:hide': ({ store }) => store.update('ui', u => { u.fightRecap = null; }),
+
   'recorder:toggle': ({ recorder, store }) => {
     const on = recorder.toggle();
     store.update('status', s => { s.recording = on; });
@@ -142,6 +159,7 @@ export function runAction(ctx: ActionContext, name: string, payload?: unknown): 
 export function hotkeyAction(ctx: ActionContext, binding: string): void {
   const [kind, arg] = binding.split(':');
   if (kind === 'h2h') runAction(ctx, 'ui:h2h', { lane: (ROLES as readonly string[]).includes(arg) ? arg : null });
+  else if (kind === 'fight') void Promise.resolve().then(() => runAction(ctx, arg === 'hide' ? 'fight:hide' : 'fight:show')).catch(() => { /* no fight yet */ });
   else if (binding === 'postgame:page') runAction(ctx, 'ui:postgamePage');
   else if (binding === 'scenes:auto') runAction(ctx, 'ui:autoScenes');
   else if (kind === 'scene') runAction(ctx, 'ui:scene', { scene: arg });

@@ -68,6 +68,11 @@
             <option value="auto">Automatic (from rosters)</option><option value="ORDER">Blue</option><option value="CHAOS">Red</option>
           </select>
         </label>
+        <label class="field"><span>Overlay layout</span>
+          <select bind:value={form.layout} onchange={touch}>
+            <option value="auto">Automatic (blue side left, like the game)</option><option value="aLeft">Team A always left</option><option value="aRight">Team A always right</option>
+          </select>
+        </label>
       </div>
     </section>
 
@@ -75,7 +80,7 @@
       {#each ['teamA', 'teamB'] as const as t}
         {@const roster = t === 'teamA' ? form.rosterA : form.rosterB}
         <section class="card team" style:--tc={form[t].color}>
-          <div class="card-title">{t === 'teamA' ? 'Team A · left' : 'Team B · right'}
+          <div class="card-title">{t === 'teamA' ? 'Team A' : 'Team B'}
             {#if t === 'teamA'}
               <label class="switch small hint"><input type="checkbox" bind:checked={form.sgFixed} onchange={touch} /><span class="track"></span>SaarGaming</label>
             {/if}

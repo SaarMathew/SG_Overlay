@@ -119,6 +119,11 @@ export function learn(img: Gray, threshold: number, label: string, templates: Te
   return true;
 }
 
+/** Exact creep score (yellow number next to the portrait): 1-3 digits and nothing else. */
+export function parseCs(text: string): number | null {
+  return /^\d{1,3}$/.test(text) ? Number(text) : null;
+}
+
 /** Finds "215(716)" in the recognized text (tolerates stray glyphs around it) -> [current, total]. */
 export function parseGold(text: string): [number, number] | null {
   const m = /(\d{1,6})\((\d{1,6})\)/.exec(text);

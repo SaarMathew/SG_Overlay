@@ -1,9 +1,11 @@
 <script lang="ts">
   import { connect } from '../lib/state.svelte.ts';
+  import { orient } from '../lib/orient.ts';
   import Stage from '../lib/Stage.svelte';
   import TeamLogo from '../lib/TeamLogo.svelte';
 
-  const { state: app } = connect(['match', 'series', 'ui']);
+  const { state: raw } = connect(['match', 'series', 'ui']);
+  const app = $derived(orient(raw));
   const m = $derived(app.match);
   const s = $derived(app.series);
 </script>

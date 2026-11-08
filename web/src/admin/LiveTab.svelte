@@ -17,6 +17,9 @@
   ];
   const LANE_LABEL: Record<string, string> = { TOP: 'Top', JGL: 'Jungle', MID: 'Mid', BOT: 'Bot', SUP: 'Support' };
 
+  const DRAGONS = [['Fire', 'Infernal'], ['Water', 'Ocean'], ['Earth', 'Mountain'], ['Air', 'Cloud'], ['Hextech', 'Hextech'], ['Chemtech', 'Chemtech'], ['Elder', 'Elder']];
+  const OBJECTIVES = [['baron', 'Baron'], ['herald', 'Herald'], ['grubs', 'Void Grub'], ['atakhan', 'Atakhan']];
+
   const m = $derived(app.match);
   const g = $derived(app.ingame);
   const pg = $derived(app.postgame);
@@ -100,6 +103,7 @@
 
   <!-- ===== right: what is happening now ===== -->
   <div class="col">
+
     <section class="card now" class:attention={pg?.active && !pg.winner}>
       <div class="card-title">Now</div>
       {#if pg?.active && !g?.active}
@@ -144,6 +148,38 @@
         {/if}
       {/if}
     </section>
+
+    {#if g?.active}
+      <section class="card">
+        <div class="card-title">Objectives <span class="hint">manual, if the game sends no objective events</span></div>
+        {#each ['A', 'B'] as const as k}
+          <div class="objrow">
+            <b>{teamName(k)}</b>
+            {#each DRAGONS as [raw, label]}<button disabled={!g?.active} onclick={() => action('game:objective', { team: k, kind: 'dragon', dragon: raw })}>{label}</button>{/each}
+            {#each OBJECTIVES as [kind, label]}<button disabled={!g?.active} onclick={() => action('game:objective', { team: k, kind })}>{label}</button>{/each}
+          </div>
+        {/each}
+      </section>
+    {/if}
+
+    {#if g?.active}
+      {@const showing = ui?.fightRecap && ui.fightRecap.until > now ? ui.fightRecap.id : null}
+      <section class="card">
+        <div class="card-title">Fights <span class="hint">recap goes on air only when you press Show {@render hk('fight:show')}</span>
+          {#if showing !== null}<button class="ghost hidebtn" onclick={() => action('fight:hide')}>Hide</button>{/if}
+        </div>
+        {#each [...(g.fights ?? [])].reverse() as f (f.id)}
+          <div class="fightrow" class:on={showing === f.id}>
+            <span class="ftime">{fmtTime(f.start)}–{fmtTime(f.end)}</span>
+            <span class="fscore"><b>{m?.teamA.tag}</b> {f.killsA} : {f.killsB} <b>{m?.teamB.tag}</b></span>
+            <span class="fgold" class:pos={f.goldSwing !== null && f.goldSwing > 0} class:neg={f.goldSwing !== null && f.goldSwing < 0}>{f.goldSwing === null ? '–' : fmtGold(f.goldSwing, true)}</span>
+            <button onclick={() => action('fight:show', { id: f.id })}>Show</button>
+          </div>
+        {:else}
+          <p class="muted">No fights yet – two or more kills within 15 s count as a fight.</p>
+        {/each}
+      </section>
+    {/if}
 
     {#if g?.active}
       {@const pb = app.status?.playback}
@@ -277,4 +313,13 @@
   .link { padding: 6px 0 !important; color: var(--sg) !important; border: none !important; }
   .sep { width: 8px; }
   p { margin-top: 6px; line-height: 1.45; }
+  .objrow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 6px; }
+  .objrow b { width: 100%; }
+  .fightrow { display: grid; grid-template-columns: 96px 1fr 64px auto; gap: 10px; align-items: center; padding: 6px 8px; margin-top: 4px; border-radius: 8px; border: 1px solid transparent; }
+  .fightrow.on { border-color: var(--sg); background: rgba(155,77,255,.10); }
+  .ftime { font-feature-settings: "tnum" 1; color: var(--muted); }
+  .fscore b { color: var(--muted); font-size: 12px; }
+  .fgold { text-align: right; font-weight: 700; color: var(--muted); }
+  .fgold.pos { color: var(--sg); } .fgold.neg { color: var(--opp); }
+  .hidebtn { float: right; padding: 2px 10px !important; }
 </style>

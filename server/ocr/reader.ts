@@ -5,7 +5,7 @@ import { CONFIG_DIR, DATA_DIR, type OcrRegion, type Settings } from '../config.t
 import type { ObsAdapter } from '../adapters/obs.ts';
 import type { Store } from '../state/store.ts';
 import type { GoldReading, SourceBus } from '../sources/raw.ts';
-import { emptyTemplates, learn, loadTemplates, parseGold, recognize, toGray, type Gray, type Templates } from './matcher.ts';
+import { emptyTemplates, learn, loadTemplates, parseCs, parseGold, recognize, toGray, type Gray, type Templates } from './matcher.ts';
 import { log } from '../log.ts';
 
 /** glyphs learned on this PC (added to the shipped defaults) */
@@ -13,7 +13,8 @@ export const TEMPLATES_FILE = path.join(DATA_DIR, 'ocr', 'templates.json');
 /** shipped defaults, trained from real spectator crops (scripts/ocr-train.ts) */
 export const DEFAULT_TEMPLATES_FILE = path.join(CONFIG_DIR, 'ocr-templates.json');
 
-export interface RowPreview { side: 'order' | 'chaos'; row: number; text: string; value: [number, number] | null; png: string }
+export type OcrKind = 'gold' | 'cs';
+export interface RowPreview { kind: OcrKind; side: 'order' | 'chaos'; row: number; text: string; value: [number, number] | number | null; png: string }
 
 const readTemplates = (file: string): Templates => {
   try { return loadTemplates(JSON.parse(fs.readFileSync(file, 'utf8'))); } catch { return emptyTemplates(); }
@@ -74,6 +75,8 @@ export class GoldOcr {
         this.onCrops([
           ...ocr.order.map((r, i) => ({ name: `order${i}`, png: cropPng(frame, r) })),
           ...ocr.chaos.map((r, i) => ({ name: `chaos${i}`, png: cropPng(frame, r) })),
+          ...ocr.csOrder.map((r, i) => ({ name: `csorder${i}`, png: cropPng(frame, r) })),
+          ...ocr.csChaos.map((r, i) => ({ name: `cschaos${i}`, png: cropPng(frame, r) })),
         ]);
       }
       if (!Object.keys(this.templates.chars).length) {
@@ -105,7 +108,8 @@ export class GoldOcr {
   read(png: PNG): GoldReading {
     const { ocr } = this.settings();
     const side = (regions: OcrRegion[]) => regions.map(r => parseGold(recognize(this.crop(png, r), ocr.threshold, this.templates)));
-    return { order: side(ocr.order), chaos: side(ocr.chaos) };
+    const cs = (regions: OcrRegion[]) => regions.map(r => parseCs(recognize(this.crop(png, r), ocr.threshold, this.templates)));
+    return { order: side(ocr.order), chaos: side(ocr.chaos), cs: { order: cs(ocr.csOrder ?? []), chaos: cs(ocr.csChaos ?? []) } };
   }
 
   /** Current crops with recognized text, for the calibration view in the admin panel. */
@@ -117,19 +121,21 @@ export class GoldOcr {
     for (const id of this.previewFrames.keys()) if (id < frameId - 4) this.previewFrames.delete(id);
     const { ocr } = this.settings();
     const rows: RowPreview[] = [];
-    for (const [sideName, regions] of [['order', ocr.order], ['chaos', ocr.chaos]] as const) {
+    const groups = [['gold', 'order', ocr.order], ['gold', 'chaos', ocr.chaos], ['cs', 'order', ocr.csOrder ?? []], ['cs', 'chaos', ocr.csChaos ?? []]] as const;
+    for (const [kind, sideName, regions] of groups) {
       regions.forEach((r, row) => {
         const text = recognize(this.crop(png, r), ocr.threshold, this.templates);
-        rows.push({ side: sideName, row, text, value: parseGold(text), png: cropPng(png, r).toString('base64') });
+        rows.push({ kind, side: sideName, row, text, value: kind === 'gold' ? parseGold(text) : parseCs(text), png: cropPng(png, r).toString('base64') });
       });
     }
     return { frameId, rows };
   }
 
   /** Learns glyphs from a crop shown in the calibration view, labeled by the operator (e.g. "215(716)"). */
-  learnRow(frameId: number, side: 'order' | 'chaos', row: number, label: string): boolean {
+  learnRow(frameId: number, side: 'order' | 'chaos', row: number, label: string, kind: OcrKind = 'gold'): boolean {
     const png = this.previewFrames.get(frameId);
-    const region = this.settings().ocr[side][row];
+    const { ocr } = this.settings();
+    const region = (kind === 'cs' ? (side === 'order' ? ocr.csOrder : ocr.csChaos) : ocr[side])?.[row];
     if (!png || !region) return false;
     const ok = learn(this.crop(png, region), this.settings().ocr.threshold, label.replace(/\s/g, ''), this.learned);
     if (ok) {

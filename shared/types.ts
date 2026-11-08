@@ -27,6 +27,7 @@ export interface MatchConfig {
   rosterA: RosterEntry[];
   rosterB: RosterEntry[];
   sideA: 'auto' | GameSide;      // which in-game side team A plays on
+  layout: 'auto' | 'aLeft' | 'aRight'; // which side of the screen team A is drawn on; auto = blue side left like the game HUD
   leagueLine: string;
   format: 1 | 2 | 3 | 5;
   caster: string;
@@ -148,6 +149,28 @@ export interface Popup {
 export interface GoldPoint { t: number; diff: number }       // diff = A - B
 export interface PlayerGoldPoint { t: number; a: number[]; b: number[] } // per role, total gold
 
+export interface FightPlayer { champ: string; team: TeamKey }
+export interface FightKill { t: number; killer: FightPlayer; victim: FightPlayer; assisters: string[]; shutdown?: number }
+export interface FightObjective {
+  t: number;
+  kind: 'dragon' | 'elder' | 'baron' | 'herald' | 'grubs' | 'atakhan' | 'tower' | 'inhib';
+  team: TeamKey;
+  dragonType?: DragonType;
+}
+/** A teamfight: >= 2 champion kills, each within a few seconds of the previous one. */
+export interface Fight {
+  id: number;                    // start time (s), stable while the fight exists
+  start: number;
+  end: number;
+  kills: FightKill[];
+  killsA: number;
+  killsB: number;
+  multikills: { t: number; champ: string; team: TeamKey; streak: number }[];
+  objectives: FightObjective[];  // from the first kill until 30 s after the last
+  goldSwing: number | null;      // (A - B) after minus before; null without OCR gold
+  winner: TeamKey | null;        // more kills; null = even trade
+}
+
 export interface IngameState {
   active: boolean;
   gameTime: number;
@@ -160,6 +183,7 @@ export interface IngameState {
   popups: Popup[];
   goldHistory: GoldPoint[];      // one point per minute
   playerGoldHistory: PlayerGoldPoint[];
+  fights: Fight[];               // last ~10, newest last
 }
 
 export interface PostgameState {
@@ -184,6 +208,10 @@ export interface UiState {
   pauseText: string;
   /** show Riot's replay bar (timeline) in the game instead of hiding it from the stream */
   replayBar: boolean;
+  /** computed by the server from match.layout / game side: draw team A on the right (never set by clients) */
+  aRight: boolean;
+  /** operator-triggered fight recap on the ingame overlay (until = epoch ms) */
+  fightRecap: { id: number; until: number } | null;
 }
 
 export type Health = 'ok' | 'warn' | 'down' | 'off';

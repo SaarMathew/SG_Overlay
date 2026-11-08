@@ -35,7 +35,7 @@
     'h2h:BOT': 'Head to head · Bot', 'h2h:SUP': 'Head to head · Support', 'h2h:off': 'Hide head to head',
     'postgame:page': 'Post-game page', 'scenes:auto': 'Automatic switching on/off', 'scene:pause': 'Pause scene',
     'replay:back10': 'Playback · 10 s back', 'replay:fwd10': 'Playback · 10 s forward', 'replay:pause': 'Playback · pause / play',
-    'replay:live': 'Playback · back to live', 'replay:bar': 'Show / hide Riot replay bar',
+    'replay:live': 'Playback · back to live', 'replay:bar': 'Show / hide Riot replay bar', 'fight:show': 'Show fight recap',
   };
 </script>
 
@@ -65,6 +65,7 @@
     <div class="form">
       <label class="field"><span>Install folder (contains lockfile and Config\game.cfg)</span><input bind:value={s.leagueDir} oninput={touch} /></label>
       <label class="switch"><input type="checkbox" bind:checked={s.applyReplayRender} onchange={touch} /><span class="track"></span>Hide Riot HUD elements automatically at game start</label>
+      <label class="switch"><input type="checkbox" checked={!s.replayRender.interfaceAnnounce} onchange={(e) => { s.replayRender.interfaceAnnounce = !e.currentTarget.checked; touch(); }} /><span class="track"></span>Hide Riot's centre announcements (First Blood, multikills, objectives) – our popups replace them</label>
     </div>
   </Section>
 

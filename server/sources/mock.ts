@@ -135,6 +135,10 @@ export class MockSource {
     // kills every ~40s
     for (let t = 170; t < this.duration - 20; t += 25 + rnd() * 40) add(t, { EventName: 'ChampionKill', KillerName: killer(rnd() < 0.64) });
     add(172, { EventName: 'FirstBlood', Recipient: 'sg' });
+    // scripted skirmishes (kills chained within a few seconds) so the fight recap can be tried
+    for (const [t, sgWins] of [[420, true], [428, true], [436, false], [441, true], [452, true], [1685, true], [1690, false], [1694, true], [1698, true], [1701, true]] as const) {
+      add(t, { EventName: 'ChampionKill', KillerName: killer(sgWins) });
+    }
     const drakes: [number, string, boolean][] = [[330, 'Earth', false], [650, 'Fire', true], [960, 'Water', true], [1270, 'Fire', true], [1580, 'Fire', true]];
     for (const [t, type, sgWins] of drakes) add(t, { EventName: 'DragonKill', DragonType: type, Stolen: 'False', KillerName: killer(sgWins) });
     for (const t of [500, 520, 545]) add(t, { EventName: 'HordeKill', KillerName: 'sg' });
@@ -201,7 +205,7 @@ export class MockSource {
         isDead: s.deadUntil > gt, respawnTimer: Math.max(0, s.deadUntil - gt), items,
         level: Math.min(18, 1 + Math.floor(gt / 95 + s.k * 0.3)), position: '',
         riotId: `${p.name}#EUW`, riotIdGameName: p.name, summonerName: p.name,
-        scores: { kills: s.k, deaths: s.d, assists: s.a, creepScore: Math.round((Math.max(0, gt - 65) / 60) * p.csRate), wardScore: (gt / 60) * (i % 5 === 4 ? 2.8 : 0.9) },
+        scores: { kills: s.k, deaths: s.d, assists: s.a, creepScore: Math.floor(Math.round((Math.max(0, gt - 65) / 60) * p.csRate) / 10) * 10,  /* real API: steps of 10 */ wardScore: (gt / 60) * (i % 5 === 4 ? 2.8 : 0.9) },
         summonerSpells: {
           summonerSpellOne: { rawDisplayName: `GeneratedTip_SummonerSpell_${p.spells[0]}_DisplayName` },
           summonerSpellTwo: { rawDisplayName: `GeneratedTip_SummonerSpell_${p.spells[2]}_DisplayName` },
@@ -221,7 +225,12 @@ export class MockSource {
       const total = this.totalGold(gt, p, st[i]);
       return [Math.round((total * 0.37) % 1400), total];
     };
-    return { order: opp.map((p, i) => row(p, i + 5)), chaos: sg.map((p, i) => row(p, i)) };
+    // exact CS (the API value is this rounded down to 10)
+    const cs = (p: MockPlayer) => Math.round((Math.max(0, gt - 65) / 60) * p.csRate);
+    return {
+      order: opp.map((p, i) => row(p, i + 5)), chaos: sg.map((p, i) => row(p, i)),
+      cs: { order: opp.map(cs), chaos: sg.map(cs) },
+    };
   }
 }
 
