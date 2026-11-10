@@ -54,7 +54,8 @@
 </div>
 
 <style>
-  .h2h { position: absolute; left: 24px; top: 716px; width: 540px; height: 340px; display: flex; flex-direction: column; background: var(--cover);
+  /* ends at x 484: the scoreboard frame starts at x 497 */
+  .h2h { position: absolute; left: 24px; top: 716px; width: 460px; height: 340px; display: flex; flex-direction: column; background: var(--cover);
          clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%); animation: slide .4s cubic-bezier(.2,.8,.2,1) both; }
   @keyframes slide { from { opacity: 0; transform: translateX(-600px); } to { opacity: 1; transform: none; } }
   .top { display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 18px; background: var(--bg); }
@@ -63,10 +64,10 @@
   .duel { display: grid; grid-template-columns: minmax(0, 1fr) 50px minmax(0, 1fr); align-items: center; height: 92px; padding: 0 18px; }
   .who { display: flex; align-items: center; gap: 12px; min-width: 0; }
   .who.r { flex-direction: row-reverse; text-align: right; }
-  .who img { width: 64px; height: 64px; border-radius: 4px; flex: none; display: block; }
+  .who img { width: 56px; height: 56px; border-radius: 4px; flex: none; display: block; }
   .nm { min-width: 0; display: flex; flex-direction: column; }
   .who.r .nm { align-items: flex-end; }
-  .pn { font: 800 26px/1 var(--font-num); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .pn { font: 800 22px/1 var(--font-num); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   .pc { font: 600 14px var(--font); color: var(--muted); white-space: nowrap; }
   .vs { text-align: center; font: 800 22px var(--font-num); color: var(--muted); }
   .rows { display: flex; flex-direction: column; gap: 6px; padding: 0 18px; }

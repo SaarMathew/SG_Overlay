@@ -174,6 +174,15 @@ export interface Fight {
   winner: TeamKey | null;        // more kills; null = even trade
 }
 
+/** One entry of the chronological event log (replay timeline markers); `text` is display-ready (German). */
+export interface LogEntry {
+  t: number;
+  kind: 'kill' | 'multikill' | 'firstblood' | 'ace' | 'dragon' | 'elder' | 'baron' | 'herald' | 'grubs' | 'tower' | 'inhib';
+  team: TeamKey | null;
+  text: string;
+  dragonType?: DragonType;
+}
+
 export interface IngameState {
   active: boolean;
   gameTime: number;
@@ -189,6 +198,7 @@ export interface IngameState {
   goldHistory: GoldPoint[];      // one point per minute
   playerGoldHistory: PlayerGoldPoint[];
   fights: Fight[];               // last ~10, newest last
+  log: LogEntry[];               // every processed event of this game, chronological, last 300
 }
 
 export interface PostgameState {

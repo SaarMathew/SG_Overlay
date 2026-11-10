@@ -11,6 +11,7 @@ export interface ActionContext {
   scenes: SceneController;
   applyHud: () => Promise<boolean>;
   enableReplayApi: () => void;
+  openOperator: () => void;
   recorder: { toggle: () => boolean };
   objective: (team: TeamKey, kind: ManualObjective, dragon?: string) => void;
   playback: {
@@ -128,6 +129,8 @@ export const ACTIONS: Record<string, Handler> = {
 
   'ui:pauseText': ({ store }, p: { text: string }) => store.update('ui', u => { u.pauseText = p.text; }),
 
+  'operator:open': ({ openOperator }) => openOperator(),
+
   'hud:apply': ({ applyHud }) => applyHud(),
 
   // ---- spectator playback (Replay API) ----
@@ -183,6 +186,7 @@ export function hotkeyAction(ctx: ActionContext, binding: string): void {
   }
   else if (binding === 'postgame:page') runAction(ctx, 'ui:postgamePage');
   else if (binding === 'scenes:auto') runAction(ctx, 'ui:autoScenes');
+  else if (binding === 'operator:open') runAction(ctx, 'operator:open');
   else if (binding === 'sides:swap') runAction(ctx, 'match:swapSides');
   else if (kind === 'scene') runAction(ctx, 'ui:scene', { scene: arg });
   else if (kind === 'replay') {

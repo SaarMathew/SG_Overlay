@@ -67,6 +67,12 @@ describe('orient', () => {
     expect([f.kills[0].killer.team, f.kills[0].victim.team, f.multikills[0].team, f.objectives[0].team]).toEqual(['B', 'A', 'B', 'A']);
     expect(s.ingame.fights[0].killsA).toBe(3);
   });
+  it('swaps the team of log entries when aRight', () => {
+    const s = base(); s.ui = { ...s.ui, aRight: true };
+    s.ingame = { ...s.ingame, log: [{ t: 1, kind: 'kill', team: 'A', text: 'x' }, { t: 2, kind: 'ace', team: null, text: 'y' }] };
+    expect(orient(s).ingame.log.map(l => l.team)).toEqual(['B', null]);
+    expect(s.ingame.log[0].team).toBe('A');
+  });
   it('swaps everything when aRight', () => {
     const s = base(); s.ui = { ...s.ui, aRight: true };
     const o = orient(s);

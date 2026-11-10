@@ -226,6 +226,7 @@
           <span>Show Riot's replay bar in the game <span class="warnnote">· also visible on stream</span></span>
           {@render hk('replay:bar')}
         </label>
+        <button class="opbtn" onclick={() => action('operator:open')}>Operator-Leiste öffnen {@render hk('operator:open')}</button>
       </section>
     {/if}
 

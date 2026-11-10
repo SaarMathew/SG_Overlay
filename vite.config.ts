@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { appVersion } from './server/version.ts';
 
 const web = resolve(import.meta.dirname, 'web');
-const pages = ['admin', 'overlay/starting-soon', 'overlay/draft', 'overlay/lineup', 'overlay/ingame', 'overlay/postgame', 'overlay/pause'];
+const pages = ['admin', 'overlay/starting-soon', 'overlay/draft', 'overlay/lineup', 'overlay/ingame', 'overlay/postgame', 'overlay/pause', 'operator'];
 
 export default defineConfig({
   root: web,

@@ -85,7 +85,7 @@ export const DEFAULT_SETTINGS: Settings = {
     'h2h:off': 'Ctrl+Alt+0', 'postgame:page': 'Ctrl+Alt+P', 'scenes:auto': 'Ctrl+Alt+A', 'scene:pause': 'Ctrl+Alt+F9',
     'replay:back10': 'Ctrl+Alt+ArrowLeft', 'replay:fwd10': 'Ctrl+Alt+ArrowRight', 'replay:pause': 'Ctrl+Alt+Space',
     'replay:live': 'Ctrl+Alt+End', 'replay:bar': 'Ctrl+Alt+R', 'fight:show': 'Ctrl+Alt+F',
-    'sides:swap': 'Ctrl+Alt+S',
+    'sides:swap': 'Ctrl+Alt+S', 'operator:open': 'Ctrl+Alt+O',
   },
   postgameDelayMs: 3000,
   browserPath: '',

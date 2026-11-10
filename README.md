@@ -47,8 +47,15 @@ Die Szenennamen sind im Admin-Panel unter „Settings“ anpassbar.
 | Post-Game-Seite umschalten | `Strg+Alt+P` |
 | Szenen-Automatik an/aus | `Strg+Alt+A` |
 | Pause-Szene | `Strg+Alt+F9` |
+| Operator-Leiste öffnen | `Strg+Alt+O` |
 
 Stream Deck: `POST http://127.0.0.1:3210/api/action/<name>` mit JSON-Body, z. B. `ui:h2h` `{"lane":"TOP"}`, `ui:postgamePage`, `ui:scene` `{"scene":"pause"}`.
+
+## Operator-Leiste
+
+Eine kleine, halbtransparente Leiste, die immer im Vordergrund über dem Spiel schwebt und nur der Operator sieht: Replay-Zeitleiste (Klick/Ziehen = springen) mit Ereignis-Markern (Kills, Objectives, Multikills, Teamfights; Klick = 5 s davor springen; Marker erscheinen erst, wenn das Replay den Zeitpunkt erreicht hat), −30/−10/+10 s, Pause/Play, Live, Tempo 0.5×–4×, Head-to-Head, Fight-Recap, Seiten tauschen und Pause-Szene. Es ist ein eigenes Edge-Fenster und kommt nicht in den Stream, **wenn OBS per Fenster- bzw. Spielaufnahme (nicht Monitoraufnahme) aufnimmt** und das Spiel im randlosen Fenster (Borderless) läuft.
+
+Öffnen: Button „Operator-Leiste öffnen“ im Live-Tab (Playback), Hotkey `Strg+Alt+O` oder `operator.bat` (Doppelklick; optional `-X 100 -Y 8` für eine andere Position). Standardposition: mittig direkt über dem Scoreboard (wie Riots eigene Replay-Leiste), berechnet aus Bildschirmgröße und Windows-Skalierung. Schließen mit dem „×“ in der Leiste.
 
 ## Gold-OCR einrichten (einmalig, mit laufendem Zuschauer-Spiel)
 

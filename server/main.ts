@@ -1,6 +1,7 @@
 import path from 'node:path';
+import { spawn } from 'node:child_process';
 import { parseArgs } from 'node:util';
-import { DATA_DIR, loadObjectiveRules, loadSettings, type Settings } from './config.ts';
+import { DATA_DIR, ROOT, loadObjectiveRules, loadSettings, type Settings } from './config.ts';
 import { Store } from './state/store.ts';
 import { SourceBus } from './sources/raw.ts';
 import { DataDragon } from './adapters/ddragon.ts';
@@ -120,6 +121,11 @@ const ctx: ActionContext = {
   enableReplayApi: () => {
     enableReplayApi(settings.leagueDir);
     store.update('status', s => { s.replayApi = 'warn'; s.message = 'Replay API enabled in game.cfg – takes effect with the next game start'; });
+  },
+  openOperator: () => {
+    // floating operator bar (own Edge window, not in the stream); detached so it outlives nothing we care about
+    const script = path.join(ROOT, 'scripts', 'operator.ps1');
+    spawn('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script, '-Port', String(settings.port)], { detached: true, stdio: 'ignore', windowsHide: true }).unref();
   },
   objective: (team, kind, dragon) => pipeline.manualObjective(team, kind, dragon),
   recorder: { toggle: () => (recorder.active ? (recorder.end(), false) : (recorder.begin(), true)) },

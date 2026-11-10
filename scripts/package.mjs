@@ -26,7 +26,7 @@ fs.mkdirSync(out, { recursive: true });
 for (const entry of fs.readdirSync(out)) fs.rmSync(path.join(out, entry), { recursive: true, force: true });
 fs.rmSync(zip, { force: true });
 fs.mkdirSync(path.dirname(zip), { recursive: true });
-for (const p of ['dist', 'server', 'shared', 'config', 'package.json', 'package-lock.json', 'README.md', 'DESIGN.md']) {
+for (const p of ['dist', 'server', 'shared', 'config', 'scripts/operator.ps1', 'operator.bat', 'package.json', 'package-lock.json', 'README.md', 'DESIGN.md']) {
   fs.cpSync(path.join(root, p), path.join(out, p), { recursive: true });
 }
 

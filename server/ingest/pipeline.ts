@@ -1,5 +1,5 @@
 import type {
-  DragonType, GameSide, IngameState, InhibTimer, LineupPick, PlayerLive, Popup, PostgameState, TeamKey, TeamLive,
+  DragonType, GameSide, IngameState, InhibTimer, LineupPick, LogEntry, PlayerLive, Popup, PostgameState, TeamKey, TeamLive,
 } from '../../shared/types.ts';
 import { ROLES } from '../../shared/types.ts';
 import { emptyPick, emptyPlayer } from '../../shared/defaults.ts';
@@ -26,6 +26,7 @@ const DRAGON_TYPES: Record<string, DragonType> = {
 /** Name key for event attribution: also ignores spaces, apostrophes, "&" etc. ("Kai'Sa" = "Kaisa"). */
 const nameKey = (s: string | undefined) => normName(s).replace(/[^\p{L}\p{N}]/gu, '');
 const OBJECTIVE_EVENTS = new Set(['DragonKill', 'BaronKill', 'HeraldKill', 'HordeKill', 'VoidGrubKill', 'VoidgrubKill', 'AtakhanKill']);
+const MAX_LOG = 300;
 const GRUB_EVENTS = ['HordeKill', 'VoidGrubKill', 'VoidgrubKill'];
 const ATAKHAN_EVENTS = ['AtakhanKill'];
 const POPUP_MS = 6000;
@@ -58,6 +59,7 @@ export class Pipeline {
   private lastGameTimeChangeAt = 0;
   private lastMinute = -1;
   private popups: Popup[] = [];
+  private log: LogEntry[] = [];
   private popupId = 1;
   private gold = new GoldTracker();
   private cs = new CsTracker();
@@ -218,7 +220,7 @@ export class Pipeline {
     log.info('game', `game started, team A plays ${this.sideA}`);
     this.store.update('lineup', l => { l.active = false; });
     this.store.update('postgame', p => { p.active = false; });
-    this.store.update('ingame', g => { g.goldHistory = []; g.playerGoldHistory = []; g.fights = []; g.active = true; });
+    this.store.update('ingame', g => { g.goldHistory = []; g.playerGoldHistory = []; g.fights = []; g.log = []; g.active = true; });
   }
 
   /** forget everything derived from events (they are reprocessed from the full list on the next poll) */
@@ -232,6 +234,7 @@ export class Pipeline {
     this.seenEvents.clear();
     this.seenContent.clear();
     this.popups = [];
+    this.log = [];
     this.fights.reset();
   }
 
@@ -264,6 +267,7 @@ export class Pipeline {
       g.goldHistory = g.goldHistory.map(h => ({ ...h, diff: -h.diff }));
       g.playerGoldHistory = g.playerGoldHistory.map(h => ({ ...h, a: h.b, b: h.a }));
       g.fights = [];
+      g.log = [];
     });
   }
 
@@ -354,6 +358,7 @@ export class Pipeline {
         soul: this.terrain ?? this.kills.filter(k => k.kind === 'dragon')[2]?.dragonType ?? null,
         popups: this.popups,
         fights: this.fights.build(gt),
+        log: [...this.log],
       };
     });
     if (this.store.get('status').live !== 'ok') this.store.update('status', s => { s.live = 'ok'; });
@@ -441,6 +446,7 @@ export class Pipeline {
       const kind = type === 'elder' ? 'elder' : 'dragon';
       this.kills.push({ t: e.EventTime, kind, team: killerTeam, dragonType: type });
       this.fightObj(e.EventTime, kind, killerTeam, type);
+      this.addLog({ t: e.EventTime, kind, team: killerTeam, dragonType: type, text: `${stolen ? 'Drache gestohlen' : this.tag(killerTeam)} – ${dragonLabel(type).replace('Dragon', 'Drache')}${stolen ? ` (${this.tag(killerTeam)})` : ''}` });
       // the score bar always shows a count; an icon of unrecognized type is counted as Cloud (only the type is a guess)
       const counted = type ?? (fromScoreBar ? 'cloud' : undefined);
       if (killerTeam && counted) {
@@ -457,6 +463,7 @@ export class Pipeline {
     } else if (name === 'BaronKill') {
       this.kills.push({ t: e.EventTime, kind: 'baron', team: killerTeam });
       this.fightObj(e.EventTime, 'baron', killerTeam);
+      this.addLog({ t: e.EventTime, kind: 'baron', team: killerTeam, text: e.Stolen === 'True' ? `Baron gestohlen (${this.tag(killerTeam)})` : `${this.tag(killerTeam)} – Baron Nashor` });
       if (killerTeam) this.counters[killerTeam].barons++;
       pop({ kind: 'baron', team: killerTeam, title: e.Stolen === 'True' ? 'Objective stolen' : 'Objective secured', text: `${teamName(killerTeam)} ${e.Stolen === 'True' ? 'steal' : 'slay'} Baron Nashor` });
     } else if (name === 'HeraldKill') {
@@ -464,10 +471,12 @@ export class Pipeline {
       this.fightObj(e.EventTime, 'herald', killerTeam);
       if (killerTeam) this.counters[killerTeam].heralds++;
       const stolen = e.Stolen === 'True';
+      this.addLog({ t: e.EventTime, kind: 'herald', team: killerTeam, text: stolen ? `Herald gestohlen (${this.tag(killerTeam)})` : `${this.tag(killerTeam)} – Herald` });
       pop({ kind: 'herald', team: killerTeam, title: stolen ? 'Objective stolen' : 'Objective secured', text: `${teamName(killerTeam)} ${stolen ? 'steal' : 'take'} the Rift Herald` });
     } else if (GRUB_EVENTS.includes(name)) {
       this.kills.push({ t: e.EventTime, kind: 'grubs', team: killerTeam });
       this.fightObj(e.EventTime, 'grubs', killerTeam);
+      this.addLog({ t: e.EventTime, kind: 'grubs', team: killerTeam, text: `${this.tag(killerTeam)} – Void Grub` });
       if (killerTeam) this.counters[killerTeam].grubs++;
       const last = this.popups.at(-1);
       if (fresh && last?.kind === 'grubs' && last.team === killerTeam && last.until > now) {
@@ -490,9 +499,11 @@ export class Pipeline {
       if (name === 'TurretKilled') {
         this.counters[team].towers++;
         this.fightObj(e.EventTime, 'tower', team);
+        this.addLog({ t: e.EventTime, kind: 'tower', team, text: `Turm ${inhibLane(struct)} (${this.tag(otherTeam(team))})`.replace('  ', ' ') });
       } else {
         this.counters[team].inhibs++;
         this.fightObj(e.EventTime, 'inhib', team);
+        this.addLog({ t: e.EventTime, kind: 'inhib', team, text: `Inhibitor ${inhibLane(struct)} (${this.tag(otherTeam(team))})`.replace('  ', ' ') });
         this.inhibDown.set(struct, { team: otherTeam(team), lane: inhibLane(struct), at: e.EventTime + this.rules.inhibRespawn });
         pop({ kind: 'inhib', team, title: 'Inhibitor destroyed', text: `${teamName(team)} destroy an inhibitor` });
       }
@@ -500,12 +511,17 @@ export class Pipeline {
       this.inhibDown.delete(e.InhibRespawned ?? '');
     } else if (name === 'Ace') {
       const team = e.AcingTeam === 'ORDER' || e.AcingTeam === 'CHAOS' ? this.teamOf(e.AcingTeam) : null;
+      this.addLog({ t: e.EventTime, kind: 'ace', team, text: `Ace (${this.tag(team)})` });
       pop({ kind: 'ace', team, title: 'Ace', text: `${teamName(team)} wipe out ${teamName(team === 'A' ? 'B' : team === 'B' ? 'A' : null)}` });
     } else if (name === 'ChampionKill') {
       const victim = this.nameTeam.get(nameKey(e.VictimName));
       const kTeam = killerTeam ?? (victim ? otherTeam(victim) : null);   // executed by minion/turret: the other team gets the kill
       if (!kTeam || !this.playerOf.has(nameKey(e.VictimName))) return;
       const champ = (n?: string) => this.playerOf.get(nameKey(n))?.champ ?? '';
+      this.addLog({
+        t: e.EventTime, kind: 'kill', team: kTeam,
+        text: `${this.playerOf.has(nameKey(e.KillerName)) ? this.whoChamp(e.KillerName) : 'Turm/Vasall'} tötet ${this.whoChamp(e.VictimName)}`,
+      });
       this.fights.kill({
         t: e.EventTime, killer: { champ: champ(e.KillerName), team: kTeam }, victim: { champ: champ(e.VictimName), team: otherTeam(kTeam) },
         assisters: (e.Assisters ?? []).map(champ).filter(Boolean),
@@ -513,6 +529,7 @@ export class Pipeline {
     } else if (name === 'Multikill') {
       if (killerTeam && (e.KillStreak ?? 0) >= 2) this.fights.multikill({ t: e.EventTime, champ: this.playerOf.get(nameKey(e.KillerName))?.champ ?? '', team: killerTeam, streak: e.KillStreak! });
       if ((e.KillStreak ?? 0) < 3) return;
+      this.addLog({ t: e.EventTime, kind: 'multikill', team: killerTeam, text: `${['', '', '', 'Triple Kill', 'Quadra Kill', 'Penta Kill'][Math.min(e.KillStreak ?? 3, 5)]} – ${this.whoChamp(e.KillerName)}` });
       const label = ['', '', '', 'Triple kill', 'Quadra kill', 'Penta kill'][Math.min(e.KillStreak ?? 3, 5)];
       const text = this.who(e.KillerName, killerTeam);
       // a quadra right after the triple of the same player upgrades the popup instead of queueing a second one
@@ -525,6 +542,7 @@ export class Pipeline {
       }
     } else if (name === 'FirstBlood') {
       const t = this.nameTeam.get(nameKey(e.Recipient)) ?? null;
+      this.addLog({ t: e.EventTime, kind: 'firstblood', team: t, text: `First Blood – ${this.whoChamp(e.Recipient)}` });
       pop({ kind: 'firstblood', team: t, title: 'First blood', text: this.who(e.Recipient, t) });
     } else if (name === 'GameEnd') {
       // Result is relative to the client's own player; which side it means while spectating is not verified yet
@@ -535,6 +553,26 @@ export class Pipeline {
       this.unknownEvents.add(name);
       log.warn('game', `unhandled event "${name}": ${JSON.stringify(e)}`);
     }
+  }
+
+  /** timeline entry for the operator bar; only called for events that were actually processed (after dedupe/future skip) */
+  private addLog(e: LogEntry): void {
+    const prev = this.log.at(-1);
+    this.log.push(e);
+    if (prev && prev.t > e.t) this.log.sort((x, y) => x.t - y.t);
+    if (this.log.length > MAX_LOG) this.log.splice(0, this.log.length - MAX_LOG);
+  }
+
+  private tag(k: TeamKey | null): string {
+    if (!k) return '?';
+    const t = this.store.get('match')[k === 'A' ? 'teamA' : 'teamB'];
+    return t.tag || t.name;
+  }
+
+  /** "Name (Champion)" of a player named in an event */
+  private whoChamp(raw: string | undefined): string {
+    const p = this.playerOf.get(nameKey(raw));
+    return p ? `${p.name} (${this.dd.champName(p.champ)})` : raw || '?';
   }
 
   private fightObj(t: number, kind: Parameters<FightTracker['objective']>[0]['kind'], team: TeamKey | null, dragonType?: DragonType): void {

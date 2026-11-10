@@ -379,3 +379,37 @@ describe('score bar objectives', () => {
     expect(g.popups).toHaveLength(0);
   });
 });
+
+describe('event log', () => {
+  const kill = (id: number, t: number): RawEvent => ({ EventID: id, EventName: 'ChampionKill', EventTime: t, KillerName: 'sg1', VictimName: 'opp1', Assisters: [] });
+  const ev: RawEvent[] = [
+    kill(1, 300),
+    { EventID: 2, EventName: 'DragonKill', EventTime: 330, DragonType: 'Fire', Stolen: 'False', KillerName: 'sg2' },
+    { EventID: 3, EventName: 'TurretKilled', EventTime: 600, TurretKilled: 'Turret_T1_C_05_A', KillerName: 'Minion_T200' },
+    { EventID: 4, EventName: 'BaronKill', EventTime: 2400, Stolen: 'True', KillerName: 'opp2' },
+  ];
+
+  it('logs kills and objectives with team and display text', () => {
+    const { store, bus } = setup();
+    bus.emit('live', game(700, ev));
+    const log = store.get('ingame').log;
+    expect(log.map(l => [l.t, l.kind, l.team])).toEqual([[300, 'kill', 'A'], [330, 'dragon', 'A'], [600, 'tower', 'A']]);
+    expect(log[0].text).toContain('tötet');
+    expect(log[1].dragonType).toBe('infernal');
+    expect(log[2].text).toContain('Turm Mid');
+  });
+
+  it('skips future events, dedupes regenerated copies, and resets on a new game', () => {
+    const { store, bus } = setup();
+    bus.emit('live', game(700, ev));
+    expect(store.get('ingame').log).toHaveLength(3);
+    bus.emit('live', game(710, [...ev, kill(11, 300.4)]));
+    expect(store.get('ingame').log).toHaveLength(3);
+    bus.emit('live', game(2500, ev));
+    const last = store.get('ingame').log.at(-1)!;
+    expect([last.kind, last.team]).toEqual(['baron', 'B']);
+    expect(last.text).toContain('gestohlen');
+    bus.emit('live', game(2, ev));
+    expect(store.get('ingame').log).toHaveLength(0);
+  });
+});
