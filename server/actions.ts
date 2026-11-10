@@ -44,13 +44,18 @@ export const ACTIONS: Record<string, Handler> = {
     const [a, b] = g.active ? [g.a, g.b] : [pg.a, pg.b];
     if (!a || !b || !a.players.some(p => p.riotId)) throw new Error('No game data yet – start or spectate a game first');
     store.update('match', m => {
-      const fill = (players: typeof a.players, old: typeof m.rosterA) => players.filter(p => p.riotId).map(p => ({
+      // Keep each team with the players it already knows: if the old rosters match the other game side
+      // better (e.g. the side was detected wrong), fill them crosswise instead of A = game team A.
+      const known = (roster: typeof m.rosterA, t: NonNullable<typeof a>) =>
+        t.players.filter(p => roster.some(r => r.riotId.split('#')[0].toLowerCase() === p.riotId.split('#')[0].toLowerCase())).length;
+      const [x, y] = known(m.rosterA, b!) + known(m.rosterB, a!) > known(m.rosterA, a!) + known(m.rosterB, b!) ? [b!, a!] : [a!, b!];
+      const fill = (players: typeof x.players, old: typeof m.rosterA) => players.filter(p => p.riotId).map(p => ({
         riotId: p.riotId,
         displayName: old.find(r => r.riotId.split('#')[0].toLowerCase() === p.riotId.split('#')[0].toLowerCase())?.displayName ?? '',
         role: p.role,
       }));
-      m.rosterA = fill(a.players, m.rosterA);
-      m.rosterB = fill(b.players, m.rosterB);
+      m.rosterA = fill(x.players, m.rosterA);
+      m.rosterB = fill(y.players, m.rosterB);
     });
   },
 
