@@ -1,5 +1,5 @@
 import type {
-  DragonType, GameSide, IngameState, LineupPick, PlayerLive, Popup, PostgameState, TeamKey, TeamLive,
+  DragonType, GameSide, IngameState, InhibTimer, LineupPick, PlayerLive, Popup, PostgameState, TeamKey, TeamLive,
 } from '../../shared/types.ts';
 import { ROLES } from '../../shared/types.ts';
 import { emptyPick, emptyPlayer } from '../../shared/defaults.ts';
@@ -12,9 +12,14 @@ import { assignRoles, decideSideA, displayName, findRoster, normName } from './t
 import { computeTimers, dragonLabel, type ObjectiveKill } from './timers.ts';
 import { GoldTracker } from './gold.ts';
 import { CsTracker } from './cs.ts';
+import { TopbarTracker } from './topbar.ts';
 import { FightTracker, otherTeam } from './fights.ts';
 import { log } from '../log.ts';
 
+/** DragonType -> the name the live API uses in DragonKill events (for score-bar readings fed through handleEvent) */
+const RAW_DRAGON: Record<DragonType, string> = {
+  infernal: 'Fire', ocean: 'Water', mountain: 'Earth', cloud: 'Air', hextech: 'Hextech', chemtech: 'Chemtech', elder: 'Elder',
+};
 const DRAGON_TYPES: Record<string, DragonType> = {
   fire: 'infernal', water: 'ocean', earth: 'mountain', air: 'cloud', hextech: 'hextech', chemtech: 'chemtech', elder: 'elder',
 };
@@ -42,8 +47,12 @@ const newCounters = (): Counters => ({ towers: 0, inhibs: 0, dragons: [], elders
 export class Pipeline {
   private sideA: GameSide = 'ORDER';
   private kills: ObjectiveKill[] = [];
+  private inhibDown = new Map<string, InhibTimer>();   // by structure name
+  private terrain: DragonType | null = null;
   private counters: Record<TeamKey, Counters> = { A: newCounters(), B: newCounters() };
   private seenEvents = new Set<number>();
+  private seenContent = new Map<string, number[]>();
+  private quiet = false;   // reprocessing old events after a side change: no popups
   private nullPolls = 0;
   private lastGameTime = -1;
   private lastGameTimeChangeAt = 0;
@@ -52,6 +61,12 @@ export class Pipeline {
   private popupId = 1;
   private gold = new GoldTracker();
   private cs = new CsTracker();
+  /** objective counters read from the score bar: the only source for dragons/grubs/herald while spectating */
+  private topbar = new TopbarTracker();
+  /** objectives counted from the score bar that a real event may still announce later (that event is then not counted again) */
+  private ocrExtra: Record<TeamKey, { dragons: number; grubs: number; barons: number; heralds: number }> = { A: { dragons: 0, grubs: 0, barons: 0, heralds: 0 }, B: { dragons: 0, grubs: 0, barons: 0, heralds: 0 } };
+  /** event state was rebuilt: re-apply the score-bar counters without popups */
+  private topbarResync = false;
   private fights = new FightTracker();
   private nameTeam = new Map<string, TeamKey>();
   private playerOf = new Map<string, { name: string; champ: string }>();
@@ -113,8 +128,55 @@ export class Pipeline {
     if (!reading) return;
     // plausibility runs on game time (correct for pauses and fast replays), not wall-clock time
     this.cs.accept(reading, this.pollNo);
+    this.onTopbar(reading);
     const valid = this.gold.accept(reading, Math.max(0, this.lastGameTime) * 1000, this.pollNo);
     this.store.update('status', s => { s.ocr = valid >= 8 ? 'ok' : valid > 0 ? 'warn' : s.ocr === 'off' ? 'off' : 'warn'; });
+  }
+
+  /**
+   * Dragons, barons and grubs from the score bar. Events win: only what the events did not count is added, credited at
+   * the current game time (timers, soul and popups work as for a real event). Towers are only cross-checked.
+   */
+  private onTopbar(reading: GoldReading): void {
+    if (!reading.topbar || !this.store.get('ingame').active) return;
+    const changes = this.topbar.accept(reading);
+    const quiet = this.topbarResync || changes.some(c => c.baseline);
+    this.topbarResync = false;
+    const gt = Math.max(0, this.lastGameTime);
+    for (const side of ['ORDER', 'CHAOS'] as const) {
+      const team = this.teamOf(side);
+      const c = this.counters[team];
+      const wasQuiet = this.quiet;
+      this.quiet = quiet;
+      try {
+        for (let i = c.dragons.length + c.elders; i < this.topbar.get(side, 'dragons'); i++) {
+          const type = this.topbar.typesOf(side)[i] ?? null;
+          this.ocrExtra[team].dragons++;
+          this.handleEvent({ EventID: -1, EventName: 'DragonKill', EventTime: gt, DragonType: type ? RAW_DRAGON[type] : undefined, Stolen: 'False' }, gt, Date.now(), team, true);
+          log.info('game', `score bar: ${side} dragon ${i + 1} (${type ?? 'unknown type'}) at ${Math.floor(gt)}s`);
+        }
+        // Riot's counter counts Rift Herald and Baron together (verified on a replay: +1 at the herald ~16:50,
+        // +1 at the baron): before the Baron spawns an increase is the herald, afterwards a baron.
+        while (c.heralds + c.barons < this.topbar.get(side, 'barons')) {
+          const herald = gt < this.rules.baronFirst;
+          this.ocrExtra[team][herald ? 'heralds' : 'barons']++;
+          this.handleEvent({ EventID: -1, EventName: herald ? 'HeraldKill' : 'BaronKill', EventTime: gt, Stolen: 'False' }, gt, Date.now(), team, true);
+          log.info('game', `score bar: ${side} ${herald ? 'herald' : 'baron'} at ${Math.floor(gt)}s`);
+        }
+        while (c.grubs < this.topbar.get(side, 'grubs')) {
+          this.ocrExtra[team].grubs++;
+          this.handleEvent({ EventID: -1, EventName: 'HordeKill', EventTime: gt }, gt, Date.now(), team, true);
+          log.info('game', `score bar: ${side} grub ${c.grubs} at ${Math.floor(gt)}s`);
+        }
+      } finally {
+        this.quiet = wasQuiet;
+      }
+    }
+    for (const ch of changes) {
+      if (ch.counter !== 'towers') continue;
+      const have = this.counters[this.teamOf(ch.side)][ch.counter];
+      if (have !== ch.to) log.info('game', `score bar ${ch.side} ${ch.counter} ${ch.to}, events counted ${have}`);
+    }
   }
 
   // ---------- live game ----------
@@ -133,7 +195,7 @@ export class Pipeline {
     // After the end the client keeps serving the finished game (end screen): that is not a new game.
     // A new game has other players or starts again near 0:00 (same teams in the next game of a series).
     if (!ingame.active && this.ended && this.ended.sig === sig && gt >= this.ended.gt - 30) return;
-    if (!ingame.active || gt < this.lastGameTime - 5) this.startGame(data);
+    if (!ingame.active || gt < this.lastGameTime - 30) this.startGame(data);
     this.lastSig = sig;
     this.processPoll(data, gt);
   }
@@ -142,14 +204,11 @@ export class Pipeline {
     const match = this.store.get('match');
     const names = (side: GameSide) => data.allPlayers.filter(p => p.team === side).map(pName);
     this.sideA = decideSideA(match, names('ORDER'), names('CHAOS'));
-    this.kills = [];
-    this.counters = { A: newCounters(), B: newCounters() };
-    this.seenEvents.clear();
+    this.resetEvents();
     this.lastMinute = -1;
-    this.popups = [];
     this.gold.reset();
     this.cs.reset();
-    this.fights.reset();
+    this.topbar.reset();
     this.ocrLast.clear();
     // the new game's clock (the old one would mark the first polls as "paused" and skew OCR timing)
     this.lastGameTime = data.gameData.gameTime;
@@ -160,6 +219,52 @@ export class Pipeline {
     this.store.update('ingame', g => { g.goldHistory = []; g.playerGoldHistory = []; g.fights = []; g.active = true; });
   }
 
+  /** forget everything derived from events (they are reprocessed from the full list on the next poll) */
+  private resetEvents(): void {
+    this.kills = [];
+    this.inhibDown.clear();
+    this.terrain = null;
+    this.counters = { A: newCounters(), B: newCounters() };
+    this.ocrExtra = { A: { dragons: 0, grubs: 0, barons: 0, heralds: 0 }, B: { dragons: 0, grubs: 0, barons: 0, heralds: 0 } };
+    this.topbarResync = true;
+    this.seenEvents.clear();
+    this.seenContent.clear();
+    this.popups = [];
+    this.fights.reset();
+  }
+
+  /**
+   * A replay seeked back regenerates events it already served (new EventID, same content, time within a moment).
+   * True if an event with the same name and fields happened at about this time already; records it otherwise.
+   */
+  private isRepeat(e: RawEvent): boolean {
+    const { EventID: _id, EventTime: _t, ...fields } = e as RawEvent & Record<string, unknown>;
+    const key = JSON.stringify(Object.keys(fields).sort().map(k => {
+      const v = (fields as Record<string, unknown>)[k];
+      return [k, Array.isArray(v) ? [...v].sort() : v];
+    }));
+    const times = this.seenContent.get(key);
+    if (times?.some(t => Math.abs(t - e.EventTime) <= 1.5)) return true;
+    if (times) times.push(e.EventTime); else this.seenContent.set(key, [e.EventTime]);
+    return false;
+  }
+
+  /** match setup changed mid-game (rosters, side): if team A is now on the other side, swap A/B state */
+  private reevaluateSide(data: AllGameData): void {
+    const names = (side: GameSide) => data.allPlayers.filter(p => p.team === side).map(pName);
+    const side = decideSideA(this.store.get('match'), names('ORDER'), names('CHAOS'));
+    if (side === this.sideA) return;
+    log.info('game', `team A now plays ${side} (was ${this.sideA}), rebuilding team state`);
+    this.sideA = side;
+    this.resetEvents();
+    this.quiet = true;
+    this.store.update('ingame', g => {
+      g.goldHistory = g.goldHistory.map(h => ({ ...h, diff: -h.diff }));
+      g.playerGoldHistory = g.playerGoldHistory.map(h => ({ ...h, a: h.b, b: h.a }));
+      g.fights = [];
+    });
+  }
+
   private teamOf(side: GameSide): TeamKey {
     return side === this.sideA ? 'A' : 'B';
   }
@@ -167,6 +272,7 @@ export class Pipeline {
   private processPoll(data: AllGameData, gt: number): void {
     this.pollNo++;
     const now = Date.now();
+    if (this.pollNo > 1) this.reevaluateSide(data);
     const match = this.store.get('match');
 
     // Events name players by Riot ID in games, but by champion name in spectator mode
@@ -190,13 +296,18 @@ export class Pipeline {
     }
     for (const k of ambiguous) { this.nameTeam.delete(k); this.playerOf.delete(k); }
 
+    this.terrain = terrainSoul(data.gameData.mapTerrain) ?? this.terrain;
     const events = data.events?.Events ?? [];
     // by ID, not "greater than the last": a late or out-of-order event must still be counted exactly once
     for (const e of [...events].sort((x, y) => x.EventID - y.EventID)) {
       if (this.seenEvents.has(e.EventID)) continue;
+      // a replay seeked back keeps serving events it already saw: those lie in the future, handle them when reached
+      if (e.EventTime > gt + 1) continue;
       this.seenEvents.add(e.EventID);
+      if (this.isRepeat(e)) continue;
       this.handleEvent(e, gt, now);
     }
+    this.quiet = false;
 
     const team = (key: TeamKey): TeamLive => {
       const side: GameSide = key === 'A' ? this.sideA : this.sideA === 'ORDER' ? 'CHAOS' : 'ORDER';
@@ -236,7 +347,9 @@ export class Pipeline {
       }
       return {
         ...g, active: true, gameTime: gt, receivedAt: now, paused, a, b, goldSource,
-        timers: computeTimers(this.kills, gt, this.rules),
+        timers: computeTimers(this.kills, gt, this.rules, this.terrain),
+        inhibTimers: [...this.inhibDown.values()].filter(i => i.at > gt).sort((x, y) => x.at - y.at),
+        soul: this.terrain ?? this.kills.filter(k => k.kind === 'dragon')[2]?.dragonType ?? null,
         popups: this.popups,
         fights: this.fights.build(gt),
       };
@@ -301,13 +414,19 @@ export class Pipeline {
     log.info('game', `manual ${kind}${dragon ? ` (${dragon})` : ''} for team ${team} at ${Math.floor(gt)}s`);
   }
 
-  private handleEvent(e: RawEvent, gt: number, now: number, forcedTeam?: TeamKey): void {
-    const fresh = e.EventTime >= gt - 15;   // no popups for history replayed after a restart
+  private handleEvent(e: RawEvent, gt: number, now: number, forcedTeam?: TeamKey, fromScoreBar = false): void {
+    const fresh = !this.quiet && e.EventTime >= gt - 15;   // no popups for history replayed after a restart
     let killerTeam = forcedTeam ?? this.nameTeam.get(nameKey(e.KillerName)) ?? null;
     if (!killerTeam && OBJECTIVE_EVENTS.has(e.EventName)) {
       // killer is no known player (minion, renamed champion, ...): the assisters are on the same team
       killerTeam = (e.Assisters ?? []).map(a => this.nameTeam.get(nameKey(a))).find(Boolean) ?? null;
       if (!killerTeam) log.warn('game', `${e.EventName}: killer "${e.KillerName ?? '?'}" matches no player, objective not credited: ${JSON.stringify(e)}`);
+    }
+    if (!fromScoreBar && forcedTeam === undefined && killerTeam) {
+      // already counted from the score bar before the event arrived
+      const extra = this.ocrExtra[killerTeam];
+      const key = e.EventName === 'DragonKill' ? 'dragons' : e.EventName === 'BaronKill' ? 'barons' : e.EventName === 'HeraldKill' ? 'heralds' : GRUB_EVENTS.includes(e.EventName) ? 'grubs' : null;
+      if (key && extra[key] > 0) { extra[key]--; return; }
     }
     const teamName = (k: TeamKey | null) => (k ? this.store.get('match')[k === 'A' ? 'teamA' : 'teamB'].name : 'Unknown');
     const pop = (p: Omit<Popup, 'id' | 'from' | 'until'>) => fresh && this.popup(p, now);
@@ -315,30 +434,35 @@ export class Pipeline {
 
     if (name === 'DragonKill') {
       const type = DRAGON_TYPES[(e.DragonType ?? '').toLowerCase().replace(/[^a-z]/g, '').replace(/dragon$/, '')];
-      if (!type) log.warn('game', `DragonKill with unknown DragonType "${e.DragonType ?? ''}": ${JSON.stringify(e)}`);
+      if (!type && !fromScoreBar) log.warn('game', `DragonKill with unknown DragonType "${e.DragonType ?? ''}": ${JSON.stringify(e)}`);
       const stolen = e.Stolen === 'True';
       const kind = type === 'elder' ? 'elder' : 'dragon';
       this.kills.push({ t: e.EventTime, kind, team: killerTeam, dragonType: type });
       this.fightObj(e.EventTime, kind, killerTeam, type);
-      if (killerTeam && type) {
-        if (type === 'elder') this.counters[killerTeam].elders++;
-        else this.counters[killerTeam].dragons.push(type);
+      // the score bar always shows a count; an icon of unrecognized type is counted as Cloud (only the type is a guess)
+      const counted = type ?? (fromScoreBar ? 'cloud' : undefined);
+      if (killerTeam && counted) {
+        if (counted === 'elder') this.counters[killerTeam].elders++;
+        else this.counters[killerTeam].dragons.push(counted);
       }
       const soul = killerTeam && type !== 'elder' && this.counters[killerTeam].dragons.length === 4;
+      const soulType = this.terrain ?? this.kills.filter(k => k.kind === 'dragon')[2]?.dragonType ?? type;
       pop({
         kind, team: killerTeam, dragonType: type, title: soul ? 'Dragon soul' : stolen ? 'Objective stolen' : 'Objective secured',
-        text: `${teamName(killerTeam)} slay the ${dragonLabel(type)}`, detail: soul ? `${dragonLabel(type).split(' ')[0]} soul` : undefined,
+        text: soul ? `${teamName(killerTeam)} claim the ${dragonLabel(soulType).split(' ')[0]} Soul` : `${teamName(killerTeam)} ${stolen ? 'steal' : 'slay'} the ${dragonLabel(type)}`,
+        detail: soul ? `${dragonLabel(soulType).split(' ')[0]} soul` : undefined,
       });
     } else if (name === 'BaronKill') {
       this.kills.push({ t: e.EventTime, kind: 'baron', team: killerTeam });
       this.fightObj(e.EventTime, 'baron', killerTeam);
       if (killerTeam) this.counters[killerTeam].barons++;
-      pop({ kind: 'baron', team: killerTeam, title: e.Stolen === 'True' ? 'Objective stolen' : 'Objective secured', text: `${teamName(killerTeam)} slay Baron Nashor` });
+      pop({ kind: 'baron', team: killerTeam, title: e.Stolen === 'True' ? 'Objective stolen' : 'Objective secured', text: `${teamName(killerTeam)} ${e.Stolen === 'True' ? 'steal' : 'slay'} Baron Nashor` });
     } else if (name === 'HeraldKill') {
       this.kills.push({ t: e.EventTime, kind: 'herald', team: killerTeam });
       this.fightObj(e.EventTime, 'herald', killerTeam);
       if (killerTeam) this.counters[killerTeam].heralds++;
-      pop({ kind: 'herald', team: killerTeam, title: 'Objective secured', text: `${teamName(killerTeam)} take the Rift Herald` });
+      const stolen = e.Stolen === 'True';
+      pop({ kind: 'herald', team: killerTeam, title: stolen ? 'Objective stolen' : 'Objective secured', text: `${teamName(killerTeam)} ${stolen ? 'steal' : 'take'} the Rift Herald` });
     } else if (GRUB_EVENTS.includes(name)) {
       this.kills.push({ t: e.EventTime, kind: 'grubs', team: killerTeam });
       this.fightObj(e.EventTime, 'grubs', killerTeam);
@@ -367,8 +491,11 @@ export class Pipeline {
       } else {
         this.counters[team].inhibs++;
         this.fightObj(e.EventTime, 'inhib', team);
+        this.inhibDown.set(struct, { team: otherTeam(team), lane: inhibLane(struct), at: e.EventTime + this.rules.inhibRespawn });
         pop({ kind: 'inhib', team, title: 'Inhibitor destroyed', text: `${teamName(team)} destroy an inhibitor` });
       }
+    } else if (name === 'InhibRespawned') {
+      this.inhibDown.delete(e.InhibRespawned ?? '');
     } else if (name === 'Ace') {
       const team = e.AcingTeam === 'ORDER' || e.AcingTeam === 'CHAOS' ? this.teamOf(e.AcingTeam) : null;
       pop({ kind: 'ace', team, title: 'Ace', text: `${teamName(team)} wipe out ${teamName(team === 'A' ? 'B' : team === 'B' ? 'A' : null)}` });
@@ -459,6 +586,25 @@ export class Pipeline {
     for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] > b[i] ? 'A' : 'B';
     return null;
   }
+}
+
+/**
+ * Lane label from a structure name: "Inhib_TOrder_L1_P1_..." (current: L0 = bot, L1 = mid, L2 = top, verified against
+ * the kill feed of a recorded game), "Barracks_T1_L1" / "..._C1" / "..._R1" (older), or top/mid/bot spelled out.
+ */
+export function inhibLane(struct: string): string {
+  const n = struct.match(/_L([012])_P\d/i)?.[1];
+  if (n) return ['Bot', 'Mid', 'Top'][+n];
+  const w = struct.match(/top|mid|bot/i)?.[0].toLowerCase();
+  const l = w ?? { l: 'top', c: 'mid', r: 'bot' }[(struct.match(/_([LCR])\d?(?:_|$)/i)?.[1] ?? '').toLowerCase()];
+  return l ? l[0].toUpperCase() + l.slice(1) : '';
+}
+
+/** mapTerrain of allgamedata ("Infernal", "Ocean", ...) -> soul element; "Default" = not known yet. */
+export function terrainSoul(t: string | undefined): DragonType | null {
+  const k = (t ?? '').toLowerCase();
+  const m: Record<string, DragonType> = { infernal: 'infernal', ocean: 'ocean', mountain: 'mountain', cloud: 'cloud', hextech: 'hextech', chemtech: 'chemtech' };
+  return m[k] ?? null;
 }
 
 export function structureOwner(struct: string): GameSide | null {

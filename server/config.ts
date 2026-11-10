@@ -8,6 +8,9 @@ export const CONFIG_DIR = path.join(ROOT, 'config');
 export const WEB_DIST = path.join(ROOT, 'dist', 'web');
 
 export interface OcrRegion { x: number; y: number; w: number; h: number }
+/** row of dragon icons below the score bar: `slots` boxes of the first region, each `step` px further (negative = leftwards) */
+export interface IconRow extends OcrRegion { step: number; slots: number }
+export interface TopbarCounters { dragons: OcrRegion; barons: OcrRegion; grubs: OcrRegion; towers: OcrRegion }
 
 export interface Settings {
   port: number;
@@ -27,6 +30,8 @@ export interface Settings {
     csOrder: OcrRegion[];
     csChaos: OcrRegion[];
     threshold: number;                     // luminance 0..255 above which a pixel counts as text
+    /** objective counters of Riot's spectator score bar (the live API sends no dragon/grub/herald events when spectating) */
+    topbar: { threshold: number; order: TopbarCounters; chaos: TopbarCounters; dragonsOrder: IconRow; dragonsChaos: IconRow };
   };
   hotkeys: Record<string, string>;         // action -> combo, e.g. "h2h:TOP": "Ctrl+Alt+1"
   postgameDelayMs: number;
@@ -39,6 +44,18 @@ const rows = (x: number) => [875, 919, 963, 1007, 1051].map(cy => ({ x, y: cy - 
 
 // CS is centred next to the portrait (x ~896 left team, ~1036 right team); 48 px fits three digits
 const csRows = (x: number) => [875, 919, 963, 1007, 1051].map(cy => ({ x, y: cy - 12, w: 48, h: 24 }));
+
+// Score bar at 1920x1080 (frames of a real replay): the digit sits right of its icon at y 21-33. The order half runs
+// dragons, barons, grubs, towers, gold | kills | gold, towers, grubs, barons, dragons (mirrored). One dragon icon per
+// elemental dragon sits below the bar, the first one next to the centre. Herald has no counter on the bar.
+const tb = (x: number, w: number): OcrRegion => ({ x, y: 18, w, h: 20 });
+const TOPBAR = {
+  threshold: 140,
+  order: { dragons: tb(519, 42), barons: tb(595, 40), grubs: tb(664, 42), towers: tb(743, 33) },
+  chaos: { towers: tb(1185, 38), grubs: tb(1251, 42), barons: tb(1329, 42), dragons: tb(1408, 44) },
+  dragonsOrder: { x: 855, y: 63, w: 18, h: 21, step: -19.5, slots: 5 },
+  dragonsChaos: { x: 1061, y: 63, w: 18, h: 21, step: 19.5, slots: 5 },
+};
 
 export const DEFAULT_SETTINGS: Settings = {
   port: 3210,
@@ -54,6 +71,7 @@ export const DEFAULT_SETTINGS: Settings = {
     interfaceTimeline: false,
     interfaceNeutralTimers: false,
     interfaceTarget: false,
+    interfaceChat: false,       // Riot's chat window
     interfaceAnnounce: false,   // Riot's centre banners; our popups replace them (kill feed stays)
     interfaceScore: true,
     interfaceScoreboard: true,
@@ -61,7 +79,7 @@ export const DEFAULT_SETTINGS: Settings = {
     interfaceMinimap: true,
   },
   applyReplayRender: true,
-  ocr: { enabled: true, intervalMs: 2000, order: rows(640), chaos: rows(1150), csOrder: csRows(868), csChaos: csRows(1018), threshold: 140 },
+  ocr: { enabled: true, intervalMs: 2000, order: rows(640), chaos: rows(1150), csOrder: csRows(868), csChaos: csRows(1018), threshold: 140, topbar: TOPBAR },
   hotkeys: {
     'h2h:TOP': 'Ctrl+Alt+1', 'h2h:JGL': 'Ctrl+Alt+2', 'h2h:MID': 'Ctrl+Alt+3', 'h2h:BOT': 'Ctrl+Alt+4', 'h2h:SUP': 'Ctrl+Alt+5',
     'h2h:off': 'Ctrl+Alt+0', 'postgame:page': 'Ctrl+Alt+P', 'scenes:auto': 'Ctrl+Alt+A', 'scene:pause': 'Ctrl+Alt+F9',
@@ -125,6 +143,7 @@ export interface ObjectiveRules {
   grubsFirst: number; heraldFirst: number;
   baronFirst: number; baronRespawn: number; baronBuff: number; elderBuff: number;
   atakhanFirst: number | null;
+  inhibRespawn: number;
   showBeforeSec: number;
 }
 

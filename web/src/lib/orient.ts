@@ -23,6 +23,7 @@ export function orient<S extends View<AppState> & Conn>(s: S): S {
     goldHistory: neg(ingame.goldHistory),
     playerGoldHistory: ingame.playerGoldHistory.map(p => ({ ...p, a: p.b, b: p.a })),
     timers: ingame.timers.map(t => ({ ...t, team: flip(t.team) })),
+    inhibTimers: ingame.inhibTimers.map(t => ({ ...t, team: flip(t.team) })),
     popups: ingame.popups.map(p => ({ ...p, team: flip(p.team) })),
     fights: ingame.fights.map(f => ({
       ...f, killsA: f.killsB, killsB: f.killsA, winner: flip(f.winner),

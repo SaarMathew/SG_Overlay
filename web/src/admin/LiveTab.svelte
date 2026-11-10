@@ -18,7 +18,7 @@
   const LANE_LABEL: Record<string, string> = { TOP: 'Top', JGL: 'Jungle', MID: 'Mid', BOT: 'Bot', SUP: 'Support' };
 
   const DRAGONS = [['Fire', 'Infernal'], ['Water', 'Ocean'], ['Earth', 'Mountain'], ['Air', 'Cloud'], ['Hextech', 'Hextech'], ['Chemtech', 'Chemtech'], ['Elder', 'Elder']];
-  const OBJECTIVES = [['baron', 'Baron'], ['herald', 'Herald'], ['grubs', 'Void Grub'], ['atakhan', 'Atakhan']];
+  const OBJECTIVES = [['baron', 'Baron'], ['herald', 'Herald'], ['grubs', 'Void Grub']];
 
   const m = $derived(app.match);
   const g = $derived(app.ingame);
@@ -155,8 +155,8 @@
         {#each ['A', 'B'] as const as k}
           <div class="objrow">
             <b>{teamName(k)}</b>
-            {#each DRAGONS as [raw, label]}<button disabled={!g?.active} onclick={() => action('game:objective', { team: k, kind: 'dragon', dragon: raw })}>{label}</button>{/each}
-            {#each OBJECTIVES as [kind, label]}<button disabled={!g?.active} onclick={() => action('game:objective', { team: k, kind })}>{label}</button>{/each}
+            {#each DRAGONS as [raw, label]}<button disabled={!g?.active} onclick={() => action('game:objective', { team: k, kind: 'dragon', dragon: raw })}><img src="/assets/objectives/{label.toLowerCase()}.png" alt="" />{label}</button>{/each}
+            {#each OBJECTIVES as [kind, label]}<button disabled={!g?.active} onclick={() => action('game:objective', { team: k, kind })}><img src="/assets/objectives/{kind}.png" alt="" />{label}</button>{/each}
           </div>
         {/each}
       </section>
@@ -315,6 +315,8 @@
   p { margin-top: 6px; line-height: 1.45; }
   .objrow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 6px; }
   .objrow b { width: 100%; }
+  .objrow button { display: inline-flex; align-items: center; gap: 4px; }
+  .objrow img { width: 18px; height: 18px; }
   .fightrow { display: grid; grid-template-columns: 96px 1fr 64px auto; gap: 10px; align-items: center; padding: 6px 8px; margin-top: 4px; border-radius: 8px; border: 1px solid transparent; }
   .fightrow.on { border-color: var(--sg); background: rgba(155,77,255,.10); }
   .ftime { font-feature-settings: "tnum" 1; color: var(--muted); }

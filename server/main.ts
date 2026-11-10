@@ -43,7 +43,8 @@ let settings: Settings = loadSettings();
 if (args.port) settings.port = Number(args.port);
 const getSettings = () => settings;
 
-const store = new Store(path.join(DATA_DIR, 'state.json'));
+// mock and replay runs get their own state file so test data never overwrites the real match setup
+const store = new Store(path.join(DATA_DIR, args.mock || args.replay ? 'state-mock.json' : 'state.json'));
 const bus = new SourceBus();
 const dd = new DataDragon();
 await dd.init();

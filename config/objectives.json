@@ -9,6 +9,7 @@
   "baronRespawn": 360,
   "baronBuff": 180,
   "elderBuff": 150,
-  "atakhanFirst": 1200,
+  "atakhanFirst": null,
+  "inhibRespawn": 300,
   "showBeforeSec": 240
 }

@@ -134,6 +134,9 @@ export interface ObjectiveTimer {
   at: number;                    // game time (s) when it spawns / expires
 }
 
+/** An inhibitor that is down; `at` = game time (s) when it respawns. Team = owner. */
+export interface InhibTimer { team: TeamKey; lane: string; at: number }
+
 export interface Popup {
   id: number;
   kind: 'dragon' | 'elder' | 'baron' | 'herald' | 'grubs' | 'atakhan' | 'inhib' | 'ace' | 'multikill' | 'firstblood' | 'tower';
@@ -180,6 +183,8 @@ export interface IngameState {
   b: TeamLive;
   goldSource: 'ocr' | 'items';
   timers: ObjectiveTimer[];
+  inhibTimers: InhibTimer[];
+  soul: DragonType | null;      // element of the dragon soul (map terrain, else 3rd dragon)
   popups: Popup[];
   goldHistory: GoldPoint[];      // one point per minute
   playerGoldHistory: PlayerGoldPoint[];

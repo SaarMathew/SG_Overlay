@@ -13,6 +13,9 @@ interface SpellJson { data: Record<string, { id: string; key: string }> }
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 /** Data Dragon lookups (champion ids, item prices, summoner spells), cached under data/ddragon/<version>. */
+/** transformed forms the live API reports under their own name (Mega Gnar = "GnarBig") */
+const FORMS: Record<string, string> = { gnarbig: 'Gnar', megagnar: 'Gnar' };
+
 export class DataDragon {
   version = FALLBACK_VERSION;
   private champByKey = new Map<number, { id: string; name: string }>();
@@ -52,7 +55,9 @@ export class DataDragon {
 
   /** Accepts a raw champion name ("game_character_displayname_LeeSin"), id or localized name. */
   champId(raw: string | undefined, displayName: string): string {
-    const fromRaw = raw?.startsWith('game_character_displayname_') ? raw.slice('game_character_displayname_'.length) : null;
+    let fromRaw = raw?.startsWith('game_character_displayname_') ? raw.slice('game_character_displayname_'.length) : null;
+    if (fromRaw && FORMS[norm(fromRaw)]) fromRaw = FORMS[norm(fromRaw)];
+    else if (FORMS[norm(displayName)]) displayName = FORMS[norm(displayName)];
     if (fromRaw && (this.champById.has(fromRaw) || !this.champById.size)) return fromRaw;
     return this.champByName.get(norm(fromRaw ?? '')) ?? this.champByName.get(norm(displayName)) ?? displayName.replace(/[^A-Za-z]/g, '');
   }

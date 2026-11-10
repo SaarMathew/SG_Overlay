@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>html,body{margin:0;background:transparent}a{color:#c9a6ff}a:hover{color:#e8429a}</style>
+</helmet>
+<div style="position:relative;width:1920px;height:1080px;overflow:hidden;font-family:'Barlow',sans-serif;color:#f4f0fa;font-variant-numeric:tabular-nums;">
+
+<sc-if value="{{ showGameLayer }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,#17201c 0 24px,#131b17 24px 48px);"></div>
+  <div style="position:absolute;left:0;right:0;top:470px;text-align:center;font:500 22px 'JetBrains Mono',monospace;color:rgba(255,255,255,.38);letter-spacing:.08em;">SPIELAUFNAHME · 1920×1080</div>
+</sc-if>
+
+<sc-if value="{{ isFull }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;background:#0b0714;"></div>
+  <div style="position:absolute;inset:0;background:radial-gradient(900px 700px at 0% 100%, {{ L.glow }}, transparent 70%);"></div>
+  <div style="position:absolute;inset:0;background:radial-gradient(900px 700px at 100% 100%, {{ R.glow }}, transparent 70%);"></div>
+  <div style="position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.025) 0 2px,transparent 2px 26px);"></div>
+  <div style="position:absolute;left:0;right:0;top:0;height:80px;display:flex;align-items:center;gap:18px;padding:0 64px;background:#0b0714;border-bottom:2px solid rgba(255,255,255,.08);">
+    <img src="assets/sg-logo.png" style="width:60px;height:60px;object-fit:contain;">
+    <div style="display:flex;flex-direction:column;gap:2px;">
+      <div style="font:800 24px 'Barlow Condensed';letter-spacing:.08em;">SAARGAMING E.V.</div>
+      <div style="font:600 13px 'Barlow';letter-spacing:.2em;color:#b8acd0;">BROADCAST</div>
+    </div>
+    <div style="flex:1;"></div>
+    <div style="font:600 20px 'Barlow Condensed';letter-spacing:.14em;color:#d8cfe8;">PRIME LEAGUE · 2. DIVISION · SPIELTAG 6</div>
+    <div style="font:700 20px 'Barlow Condensed';letter-spacing:.1em;padding:8px 16px;background:#e8429a;color:#fff;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);">BO3 · SPIEL {{ gameNo }}</div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isStarting }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:0;right:0;top:170px;display:flex;flex-direction:column;align-items:center;">
+    <div style="font:700 34px 'Barlow Condensed';letter-spacing:.32em;color:#e8429a;">GLEICH GEHT'S LOS</div>
+    <div style="font:800 300px/0.95 'Barlow Condensed';letter-spacing:-.01em;">{{ countdown }}</div>
+  </div>
+  <div style="position:absolute;left:160px;right:160px;top:690px;height:220px;display:grid;grid-template-columns:1fr 200px 1fr;gap:0;">
+    <div style="position:relative;display:flex;align-items:center;gap:32px;padding:0 40px;background:#160e27;clip-path:polygon(0 0,100% 0,calc(100% - 28px) 100%,0 100%);">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:10px;background:{{ L.color }};"></div>
+      <sc-if value="{{ L.hasLogo }}" hint-placeholder-val="{{ true }}"><img src="{{ L.logo }}" style="width:150px;height:150px;object-fit:contain;"></sc-if>
+      <sc-if value="{{ L.noLogo }}" hint-placeholder-val="{{ false }}"><div style="width:140px;height:140px;border-radius:50%;border:6px solid {{ L.color }};display:grid;place-items:center;font:800 44px 'Barlow Condensed';box-sizing:border-box;">{{ L.tag }}</div></sc-if>
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:0;">
+        <div style="font:800 64px/1 'Barlow Condensed';text-transform:uppercase;">{{ L.name }}</div>
+        <div style="font:600 20px 'Barlow';letter-spacing:.16em;color:#b8acd0;">{{ L.sideLabel }}</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+      <div style="font:800 64px/1 'Barlow Condensed';color:#e8429a;">VS</div>
+      <div style="font:700 24px 'Barlow Condensed';letter-spacing:.1em;">SERIE {{ L.series }} : {{ R.series }}</div>
+    </div>
+    <div style="position:relative;display:flex;flex-direction:row-reverse;align-items:center;gap:32px;padding:0 40px;background:#160e27;clip-path:polygon(28px 0,100% 0,100% 100%,0 100%);">
+      <div style="position:absolute;right:0;top:0;bottom:0;width:10px;background:{{ R.color }};"></div>
+      <sc-if value="{{ R.hasLogo }}" hint-placeholder-val="{{ false }}"><img src="{{ R.logo }}" style="width:150px;height:150px;object-fit:contain;"></sc-if>
+      <sc-if value="{{ R.noLogo }}" hint-placeholder-val="{{ true }}"><div style="width:140px;height:140px;border-radius:50%;border:6px solid {{ R.color }};display:grid;place-items:center;font:800 44px 'Barlow Condensed';box-sizing:border-box;">{{ R.tag }}</div></sc-if>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;text-align:right;min-width:0;">
+        <div style="font:800 64px/1 'Barlow Condensed';text-transform:uppercase;">{{ R.name }}</div>
+        <div style="font:600 20px 'Barlow';letter-spacing:.16em;color:#b8acd0;">{{ R.sideLabel }}</div>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isPause }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:0;right:0;top:300px;display:flex;flex-direction:column;align-items:center;gap:18px;">
+    <div style="font:700 34px 'Barlow Condensed';letter-spacing:.32em;color:#e8429a;">PAUSE</div>
+    <div style="font:800 168px/0.95 'Barlow Condensed';text-transform:uppercase;text-align:center;max-width:1600px;text-wrap:balance;">{{ pauseText }}</div>
+    <div style="font:600 26px 'Barlow';color:#d8cfe8;">Wir sind gleich zurück · Spielzeit {{ clock }}</div>
+  </div>
+  <div style="position:absolute;left:560px;width:800px;top:860px;height:96px;display:grid;grid-template-columns:1fr 140px 1fr;background:#160e27;clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%,0 16px);">
+    <div style="display:flex;align-items:center;gap:16px;padding-left:28px;border-left:8px solid {{ L.color }};">
+      <sc-if value="{{ L.hasLogo }}" hint-placeholder-val="{{ true }}"><img src="{{ L.logo }}" style="width:60px;height:60px;object-fit:contain;"></sc-if>
+      <sc-if value="{{ L.noLogo }}" hint-placeholder-val="{{ false }}"><div style="width:56px;height:56px;border-radius:50%;border:4px solid {{ L.color }};display:grid;place-items:center;font:800 18px 'Barlow Condensed';box-sizing:border-box;">{{ L.tag }}</div></sc-if>
+      <div style="font:800 34px 'Barlow Condensed';">{{ L.tag }}</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;font:800 44px 'Barlow Condensed';white-space:nowrap;"><span>{{ L.series }}</span><span>:</span><span>{{ R.series }}</span></div>
+    <div style="display:flex;flex-direction:row-reverse;align-items:center;gap:16px;padding-right:28px;border-right:8px solid {{ R.color }};">
+      <sc-if value="{{ R.hasLogo }}" hint-placeholder-val="{{ false }}"><img src="{{ R.logo }}" style="width:60px;height:60px;object-fit:contain;"></sc-if>
+      <sc-if value="{{ R.noLogo }}" hint-placeholder-val="{{ true }}"><div style="width:56px;height:56px;border-radius:50%;border:4px solid {{ R.color }};display:grid;place-items:center;font:800 18px 'Barlow Condensed';box-sizing:border-box;">{{ R.tag }}</div></sc-if>
+      <div style="font:800 34px 'Barlow Condensed';">{{ R.tag }}</div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isLineup }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:64px;right:64px;top:112px;display:flex;align-items:baseline;gap:24px;">
+    <div style="font:800 60px/1 'Barlow Condensed';">LINEUP</div>
+    <div style="font:600 24px 'Barlow';color:#b8acd0;">nach dem Champ Select · Spiel {{ gameNo }}</div>
+  </div>
+  <div style="position:absolute;left:64px;right:64px;top:200px;height:560px;display:grid;grid-template-columns:1fr 112px 1fr;">
+    <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;">
+      <sc-for list="{{ L.players }}" as="p" hint-placeholder-count="5">
+        <div style="position:relative;display:flex;flex-direction:column;background:#160e27;overflow:hidden;clip-path:polygon(0 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%);">
+          <div style="height:6px;background:{{ L.color }};"></div>
+          <img src="{{ p.splash }}" style="width:100%;height:390px;object-fit:cover;object-position:center 15%;display:block;background:#1d1433;">
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:4px;">
+            <div style="font:700 14px 'Barlow';letter-spacing:.2em;color:#b8acd0;">{{ p.role }}</div>
+            <div style="font:800 30px/1.05 'Barlow Condensed';">{{ p.name }}</div>
+            <div style="font:600 18px 'Barlow';color:#d8cfe8;">{{ p.champName }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:grid;place-items:center;font:800 56px 'Barlow Condensed';color:#e8429a;">VS</div>
+    <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;">
+      <sc-for list="{{ R.playersRev }}" as="p" hint-placeholder-count="5">
+        <div style="position:relative;display:flex;flex-direction:column;background:#160e27;overflow:hidden;clip-path:polygon(0 0,100% 0,100% 100%,18px 100%,0 calc(100% - 18px));text-align:right;">
+          <div style="height:6px;background:{{ R.color }};"></div>
+          <img src="{{ p.splash }}" style="width:100%;height:390px;object-fit:cover;object-position:center 15%;display:block;background:#1d1433;">
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:4px;">
+            <div style="font:700 14px 'Barlow';letter-spacing:.2em;color:#b8acd0;">{{ p.role }}</div>
+            <div style="font:800 30px/1.05 'Barlow Condensed';">{{ p.name }}</div>
+            <div style="font:600 18px 'Barlow';color:#d8cfe8;">{{ p.champName }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  <div style="position:absolute;left:64px;right:64px;top:800px;height:200px;display:grid;grid-template-columns:1fr 1fr;gap:112px;">
+    <div style="display:flex;flex-direction:column;gap:14px;padding:22px 26px;background:#120b20;border-left:8px solid {{ L.color }};">
+      <div style="font:700 18px 'Barlow';letter-spacing:.2em;color:#d8cfe8;">FEARLESS · {{ L.tag }} HAT BEREITS GESPIELT</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <sc-for list="{{ L.fearless }}" as="f" hint-placeholder-count="5">
+          <div style="position:relative;width:64px;height:64px;"><img src="{{ f }}" style="width:64px;height:64px;display:block;filter:grayscale(1) brightness(.7);border-radius:4px;"><div style="position:absolute;left:-4px;right:-4px;top:30px;height:4px;background:#e8429a;transform:rotate(-45deg);"></div></div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:14px;padding:22px 26px;background:#120b20;border-right:8px solid {{ R.color }};">
+      <div style="font:700 18px 'Barlow';letter-spacing:.2em;color:#d8cfe8;">FEARLESS · {{ R.tag }} HAT BEREITS GESPIELT</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end;">
+        <sc-for list="{{ R.fearless }}" as="f" hint-placeholder-count="5">
+          <div style="position:relative;width:64px;height:64px;"><img src="{{ f }}" style="width:64px;height:64px;display:block;filter:grayscale(1) brightness(.7);border-radius:4px;"><div style="position:absolute;left:-4px;right:-4px;top:30px;height:4px;background:#e8429a;transform:rotate(-45deg);"></div></div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isPost }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:64px;right:64px;top:108px;height:84px;display:flex;align-items:center;gap:24px;">
+    <div style="font:800 40px/1 'Barlow Condensed';letter-spacing:.06em;padding:12px 26px;background:{{ W.color }};color:#fff;clip-path:polygon(14px 0,100% 0,calc(100% - 14px) 100%,0 100%);">SIEG</div>
+    <div style="font:800 72px/1 'Barlow Condensed';text-transform:uppercase;">{{ W.name }}</div>
+    <div style="flex:1;"></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+      <div style="font:700 15px 'Barlow';letter-spacing:.2em;color:#b8acd0;">SPIELDAUER · SERIE</div>
+      <div style="font:800 40px/1 'Barlow Condensed';">31:42 · {{ L.tag }} {{ L.seriesPost }} : {{ R.seriesPost }} {{ R.tag }}</div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isPostOverview }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:64px;top:216px;width:468px;height:500px;display:flex;flex-direction:column;background:#120b20;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;height:64px;">
+      <div style="display:flex;align-items:center;padding-left:20px;font:800 30px 'Barlow Condensed';border-top:6px solid {{ L.color }};">{{ L.tag }}</div>
+      <div style="display:flex;align-items:center;justify-content:flex-end;padding-right:20px;font:800 30px 'Barlow Condensed';border-top:6px solid {{ R.color }};">{{ R.tag }}</div>
+    </div>
+    <sc-for list="{{ teamStats }}" as="s" hint-placeholder-count="7">
+      <div style="display:grid;grid-template-columns:110px 1fr 110px;align-items:center;height:60px;padding:0 20px;border-top:2px solid rgba(255,255,255,.06);">
+        <div style="font:800 32px 'Barlow Condensed';color:{{ s.lCol }};">{{ s.l }}</div>
+        <div style="text-align:center;font:700 15px 'Barlow';letter-spacing:.18em;color:#b8acd0;">{{ s.label }}</div>
+        <div style="text-align:right;font:800 32px 'Barlow Condensed';color:{{ s.rCol }};">{{ s.r }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="position:absolute;left:556px;right:64px;top:216px;height:500px;display:flex;flex-direction:column;background:#120b20;">
+    <div style="display:grid;grid-template-columns:6px 44px minmax(0,1fr) 100px 110px 70px 80px 70px 70px 170px;gap:12px;align-items:center;height:40px;padding:0 16px 0 0;font:700 13px 'Barlow';letter-spacing:.16em;color:#b8acd0;">
+      <div></div><div></div><div>SPIELER</div><div>ROLLE</div><div>K / D / A</div><div style="text-align:right;">CS</div><div style="text-align:right;">GOLD</div><div style="text-align:right;">WARDS</div><div style="text-align:right;">KP</div><div>ITEMS</div>
+    </div>
+    <sc-for list="{{ allPlayers }}" as="p" hint-placeholder-count="10">
+      <div style="display:grid;grid-template-columns:6px 44px minmax(0,1fr) 100px 110px 70px 80px 70px 70px 170px;gap:12px;align-items:center;height:44px;padding:0 16px 0 0;border-top:{{ p.sep }};">
+        <div style="height:44px;background:{{ p.color }};"></div>
+        <img src="{{ p.img }}" style="width:36px;height:36px;border-radius:4px;display:block;">
+        <div style="font:700 20px 'Barlow Condensed';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.name }}</div>
+        <div style="font:600 15px 'Barlow';color:#b8acd0;">{{ p.role }}</div>
+        <div style="font:700 21px 'Barlow Condensed';">{{ p.kda }}</div>
+        <div style="text-align:right;font:600 20px 'Barlow Condensed';">{{ p.cs }}</div>
+        <div style="text-align:right;font:600 20px 'Barlow Condensed';">{{ p.goldK }}</div>
+        <div style="text-align:right;font:600 20px 'Barlow Condensed';">{{ p.wards }}</div>
+        <div style="text-align:right;font:600 20px 'Barlow Condensed';">{{ p.kp }}%</div>
+        <div style="display:flex;gap:2px;">
+          <sc-for list="{{ p.items }}" as="it" hint-placeholder-count="7"><div style="width:22px;height:22px;background:#0b0714;border-radius:{{ it.radius }};overflow:hidden;"><sc-if value="{{ it.has }}" hint-placeholder-val="{{ true }}"><img src="{{ it.src }}" style="width:22px;height:22px;display:block;"></sc-if></div></sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="position:absolute;left:64px;right:64px;top:740px;height:300px;display:flex;flex-direction:column;gap:12px;padding:18px 24px;box-sizing:border-box;background:#120b20;">
+    <div style="display:flex;align-items:center;gap:24px;">
+      <div style="font:700 16px 'Barlow';letter-spacing:.2em;color:#d8cfe8;">GOLD-DIFFERENZ PRO MINUTE</div>
+      <div style="flex:1;"></div>
+      <div style="display:flex;align-items:center;gap:8px;font:700 16px 'Barlow';"><div style="width:14px;height:14px;background:{{ L.color }};"></div>{{ L.tag }} vorn</div>
+      <div style="display:flex;align-items:center;gap:8px;font:700 16px 'Barlow';"><div style="width:14px;height:14px;background:{{ R.color }};"></div>{{ R.tag }} vorn</div>
+    </div>
+    <div style="position:relative;flex:1;display:flex;gap:4px;">
+      <div style="position:absolute;left:0;right:0;top:118px;height:2px;background:rgba(255,255,255,.2);"></div>
+      <sc-for list="{{ goldBars }}" as="b" hint-placeholder-count="32">
+        <div style="position:relative;flex:1;">
+          <div style="position:absolute;left:0;right:0;top:{{ b.top }};height:{{ b.h }};background:{{ b.color }};"></div>
+          <sc-if value="{{ b.marker }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:50%;top:{{ b.mTop }};width:18px;height:18px;margin-left:-9px;background:{{ b.mColor }};clip-path:{{ b.mClip }};"></div></sc-if>
+          <sc-if value="{{ b.label }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:0;bottom:-4px;font:600 13px 'Barlow Condensed';color:#b8acd0;">{{ b.m }}'</div></sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isPostLanes }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:64px;right:64px;top:216px;display:flex;flex-direction:column;gap:14px;">
+    <sc-for list="{{ lanes }}" as="ln" hint-placeholder-count="5">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 300px minmax(0,1fr);height:150px;background:#120b20;">
+        <div style="display:flex;align-items:center;gap:24px;padding-left:24px;border-left:8px solid {{ L.color }};">
+          <img src="{{ ln.lp.img }}" style="width:104px;height:104px;border-radius:6px;display:block;">
+          <div style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;">
+            <div style="font:800 40px/1 'Barlow Condensed';">{{ ln.lp.name }}</div>
+            <div style="font:600 18px 'Barlow';color:#b8acd0;">{{ ln.lp.champName }}</div>
+          </div>
+          <div style="display:flex;gap:28px;padding-right:28px;">
+            <div style="display:flex;flex-direction:column;align-items:flex-end;"><div style="font:700 13px 'Barlow';letter-spacing:.18em;color:#b8acd0;">K/D/A</div><div style="font:800 34px 'Barlow Condensed';">{{ ln.lp.kda }}</div></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;"><div style="font:700 13px 'Barlow';letter-spacing:.18em;color:#b8acd0;">CS</div><div style="font:800 34px 'Barlow Condensed';">{{ ln.lp.cs }}</div></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;"><div style="font:700 13px 'Barlow';letter-spacing:.18em;color:#b8acd0;">GOLD</div><div style="font:800 34px 'Barlow Condensed';">{{ ln.lp.goldK }}</div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#0b0714;">
+          <div style="font:700 15px 'Barlow';letter-spacing:.24em;color:#b8acd0;">{{ ln.role }} · GOLD @ 15</div>
+          <div style="font:800 46px/1 'Barlow Condensed';color:{{ ln.g15Color }};">{{ ln.g15Diff }}</div>
+          <div style="display:flex;width:220px;height:8px;"><div style="width:{{ ln.g15Pct }};background:{{ L.color }};"></div><div style="flex:1;background:{{ R.color }};"></div></div>
+          <div style="display:flex;justify-content:space-between;width:220px;font:600 16px 'Barlow Condensed';color:#d8cfe8;"><div>{{ ln.g15L }}</div><div>{{ ln.g15R }}</div></div>
+        </div>
+        <div style="display:flex;flex-direction:row-reverse;align-items:center;gap:24px;padding-right:24px;border-right:8px solid {{ R.color }};">
+          <img src="{{ ln.rp.img }}" style="width:104px;height:104px;border-radius:6px;display:block;">
+          <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-end;min-width:0;flex:1;">
+            <div style="font:800 40px/1 'Barlow Condensed';">{{ ln.rp.name }}</div>
+            <div style="font:600 18px 'Barlow';color:#b8acd0;">{{ ln.rp.champName }}</div>
+          </div>
+          <div style="display:flex;flex-direction:row-reverse;gap:28px;padding-left:28px;">
+            <div style="display:flex;flex-direction:column;"><div style="font:700 13px 'Barlow';letter-spacing:.18em;color:#b8acd0;">K/D/A</div><div style="font:800 34px 'Barlow Condensed';">{{ ln.rp.kda }}</div></div>
+            <div style="display:flex;flex-direction:column;"><div style="font:700 13px 'Barlow';letter-spacing:.18em;color:#b8acd0;">CS</div><div style="font:800 34px 'Barlow Condensed';">{{ ln.rp.cs }}</div></div>
+            <div style="display:flex;flex-direction:column;"><div style="font:700 13px 'Barlow';letter-spacing:.18em;color:#b8acd0;">GOLD</div><div style="font:800 34px 'Barlow Condensed';">{{ ln.rp.goldK }}</div></div>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isIngame }}" hint-placeholder-val="{{ true }}">
+  <div style="position:absolute;left:375px;top:0;width:1170px;height:64px;display:grid;grid-template-columns:minmax(0,1fr) 132px minmax(0,1fr);background:#120b20;clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,22px 100%);">
+    <div style="position:relative;display:flex;align-items:center;gap:18px;padding-left:40px;">
+      <div style="position:absolute;left:0;right:0;top:0;height:4px;background:{{ L.color }};"></div>
+      <sc-if value="{{ L.hasLogo }}" hint-placeholder-val="{{ true }}"><img src="{{ L.logo }}" style="width:52px;height:52px;object-fit:contain;"></sc-if>
+      <sc-if value="{{ L.noLogo }}" hint-placeholder-val="{{ false }}"><div style="width:42px;height:42px;border-radius:50%;border:3px solid {{ L.color }};display:grid;place-items:center;font:800 14px 'Barlow Condensed';box-sizing:border-box;">{{ L.tag }}</div></sc-if>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font:800 28px/1 'Barlow Condensed';letter-spacing:.02em;">{{ L.tag }}</div>
+        <div style="display:flex;gap:4px;"><sc-for list="{{ L.pips }}" as="pp" hint-placeholder-count="2"><div style="width:16px;height:5px;background:{{ pp }};"></div></sc-for></div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="display:flex;align-items:center;gap:8px;"><div style="width:14px;height:14px;background:#f2c14e;border-radius:50%;"></div><div style="font:700 24px 'Barlow Condensed';">{{ L.goldK }}</div></div>
+      <div style="display:flex;align-items:center;gap:8px;"><div style="width:14px;height:16px;background:#d8cfe8;clip-path:polygon(20% 0,80% 0,80% 30%,100% 30%,100% 100%,0 100%,0 30%,20% 30%);"></div><div style="font:700 24px 'Barlow Condensed';">{{ L.towers }}</div></div>
+      <div style="width:76px;height:64px;display:grid;place-items:center;background:{{ L.color }};font:800 44px 'Barlow Condensed';color:#fff;">{{ L.kills }}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:#0b0714;">
+      <div style="font:800 32px/1 'Barlow Condensed';">{{ clock }}</div>
+      <div style="font:700 11px 'Barlow';letter-spacing:.2em;color:#b8acd0;">SPIEL {{ gameNo }} · BO3</div>
+    </div>
+    <div style="position:relative;display:flex;flex-direction:row-reverse;align-items:center;gap:18px;padding-right:40px;">
+      <div style="position:absolute;left:0;right:0;top:0;height:4px;background:{{ R.color }};"></div>
+      <sc-if value="{{ R.hasLogo }}" hint-placeholder-val="{{ false }}"><img src="{{ R.logo }}" style="width:52px;height:52px;object-fit:contain;"></sc-if>
+      <sc-if value="{{ R.noLogo }}" hint-placeholder-val="{{ true }}"><div style="width:42px;height:42px;border-radius:50%;border:3px solid {{ R.color }};display:grid;place-items:center;font:800 14px 'Barlow Condensed';box-sizing:border-box;">{{ R.tag }}</div></sc-if>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <div style="font:800 28px/1 'Barlow Condensed';letter-spacing:.02em;">{{ R.tag }}</div>
+        <div style="display:flex;gap:4px;"><sc-for list="{{ R.pips }}" as="pp" hint-placeholder-count="2"><div style="width:16px;height:5px;background:{{ pp }};"></div></sc-for></div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="display:flex;align-items:center;gap:8px;"><div style="font:700 24px 'Barlow Condensed';">{{ R.goldK }}</div><div style="width:14px;height:14px;background:#f2c14e;border-radius:50%;"></div></div>
+      <div style="display:flex;align-items:center;gap:8px;"><div style="font:700 24px 'Barlow Condensed';">{{ R.towers }}</div><div style="width:14px;height:16px;background:#d8cfe8;clip-path:polygon(20% 0,80% 0,80% 30%,100% 30%,100% 100%,0 100%,0 30%,20% 30%);"></div></div>
+      <div style="width:76px;height:64px;display:grid;place-items:center;background:{{ R.color }};font:800 44px 'Barlow Condensed';color:#fff;">{{ R.kills }}</div>
+    </div>
+  </div>
+  <div style="position:absolute;left:590px;top:64px;width:740px;height:38px;display:grid;grid-template-columns:minmax(0,1fr) 132px minmax(0,1fr);background:rgba(18,11,32,.94);clip-path:polygon(0 0,100% 0,calc(100% - 16px) 100%,16px 100%);">
+    <div style="display:flex;align-items:center;gap:12px;padding-left:28px;">
+      <div style="display:flex;gap:6px;"><sc-for list="{{ L.drakes }}" as="d" hint-placeholder-count="2"><div style="width:16px;height:16px;background:{{ d }};clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);"></div></sc-for></div>
+      <sc-if value="{{ L.hasSoul }}" hint-placeholder-val="{{ false }}"><div style="font:700 13px 'Barlow';letter-spacing:.14em;color:#ff8a5c;">SEELE</div></sc-if>
+      <div style="flex:1;"></div>
+      <div style="display:flex;align-items:center;gap:5px;"><div style="width:13px;height:13px;border-radius:50%;background:#a77bff;"></div><div style="font:700 19px 'Barlow Condensed';">{{ L.grubs }}</div></div>
+      <div style="display:flex;align-items:center;gap:5px;"><div style="width:15px;height:15px;background:#b56cff;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);"></div><div style="font:700 19px 'Barlow Condensed';">{{ L.barons }}</div></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
+      <sc-if value="{{ diffLeft }}" hint-placeholder-val="{{ true }}"><div style="width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-right:8px solid {{ diffColor }};"></div></sc-if>
+      <div style="font:800 22px 'Barlow Condensed';color:{{ diffColor }};">{{ diffText }}</div>
+      <sc-if value="{{ diffRight }}" hint-placeholder-val="{{ false }}"><div style="width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:8px solid {{ diffColor }};"></div></sc-if>
+    </div>
+    <div style="display:flex;flex-direction:row-reverse;align-items:center;gap:12px;padding-right:28px;">
+      <div style="display:flex;gap:6px;"><sc-for list="{{ R.drakes }}" as="d" hint-placeholder-count="1"><div style="width:16px;height:16px;background:{{ d }};clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);"></div></sc-for></div>
+      <sc-if value="{{ R.hasSoul }}" hint-placeholder-val="{{ false }}"><div style="font:700 13px 'Barlow';letter-spacing:.14em;color:#ff8a5c;">SEELE</div></sc-if>
+      <div style="flex:1;"></div>
+      <div style="display:flex;align-items:center;gap:5px;"><div style="font:700 19px 'Barlow Condensed';">{{ R.grubs }}</div><div style="width:13px;height:13px;border-radius:50%;background:#a77bff;"></div></div>
+      <div style="display:flex;align-items:center;gap:5px;"><div style="font:700 19px 'Barlow Condensed';">{{ R.barons }}</div><div style="width:15px;height:15px;background:#b56cff;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);"></div></div>
+    </div>
+  </div>
+  <div style="position:absolute;left:0;right:0;top:112px;display:flex;justify-content:center;gap:10px;">
+    <sc-for list="{{ timers }}" as="tm" hint-placeholder-count="3">
+      <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 12px;background:rgba(18,11,32,.94);border-bottom:3px solid {{ tm.line }};">
+        <div style="width:14px;height:14px;background:{{ tm.color }};clip-path:{{ tm.clip }};"></div>
+        <div style="font:700 13px 'Barlow';letter-spacing:.14em;color:#d8cfe8;">{{ tm.label }}</div>
+        <div style="font:800 20px 'Barlow Condensed';">{{ tm.time }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="position:absolute;left:650px;top:168px;width:620px;height:104px;display:flex;align-items:stretch;background:#120b20;clip-path:{{ popClip }};opacity:{{ popOpacity }};transition:clip-path .32s cubic-bezier(.2,.8,.2,1), opacity .2s;">
+    <div style="width:10px;background:{{ pop.color }};"></div>
+    <div style="width:104px;display:grid;place-items:center;background:#0b0714;"><div style="width:52px;height:52px;background:{{ pop.iconColor }};clip-path:{{ pop.clip }};"></div></div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:0 24px;min-width:0;">
+      <div style="display:flex;align-items:center;gap:8px;font:700 15px 'Barlow';letter-spacing:.18em;"><div style="width:10px;height:10px;background:{{ pop.color }};"></div>{{ pop.team }}</div>
+      <div style="font:800 46px/1 'Barlow Condensed';letter-spacing:.01em;">{{ pop.title }}</div>
+      <div style="font:600 17px 'Barlow';color:#d8cfe8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ pop.sub }}</div>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:24px;top:716px;width:540px;height:340px;display:flex;flex-direction:column;background:#120b20;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%);transform:{{ h2hX }};opacity:{{ h2hO }};transition:transform .4s cubic-bezier(.2,.8,.2,1), opacity .25s;">
+    <div style="display:flex;align-items:center;justify-content:space-between;height:40px;padding:0 18px;background:#0b0714;">
+      <div style="font:700 14px 'Barlow';letter-spacing:.2em;color:#d8cfe8;">LANE-VERGLEICH</div>
+      <div style="font:800 20px 'Barlow Condensed';letter-spacing:.1em;color:#e8429a;">{{ h2h.role }}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 50px 1fr;align-items:center;height:92px;padding:0 18px;">
+      <div style="display:flex;align-items:center;gap:12px;"><img src="{{ h2h.lp.img }}" style="width:64px;height:64px;border-radius:4px;box-shadow:0 0 0 3px {{ L.color }};"><div style="display:flex;flex-direction:column;"><div style="font:800 26px/1 'Barlow Condensed';">{{ h2h.lp.name }}</div><div style="font:600 14px 'Barlow';color:#b8acd0;">{{ h2h.lp.champName }}</div></div></div>
+      <div style="text-align:center;font:800 22px 'Barlow Condensed';color:#b8acd0;">VS</div>
+      <div style="display:flex;flex-direction:row-reverse;align-items:center;gap:12px;"><img src="{{ h2h.rp.img }}" style="width:64px;height:64px;border-radius:4px;box-shadow:0 0 0 3px {{ R.color }};"><div style="display:flex;flex-direction:column;align-items:flex-end;"><div style="font:800 26px/1 'Barlow Condensed';">{{ h2h.rp.name }}</div><div style="font:600 14px 'Barlow';color:#b8acd0;">{{ h2h.rp.champName }}</div></div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:0 18px;">
+      <sc-for list="{{ h2h.rows }}" as="r" hint-placeholder-count="6">
+        <div style="display:grid;grid-template-columns:64px 1fr 84px 1fr 64px;align-items:center;gap:8px;height:28px;">
+          <div style="font:800 21px 'Barlow Condensed';">{{ r.l }}</div>
+          <div style="display:flex;justify-content:flex-end;height:8px;background:rgba(255,255,255,.07);"><div style="width:{{ r.lPct }};background:{{ L.color }};"></div></div>
+          <div style="text-align:center;font:700 12px 'Barlow';letter-spacing:.16em;color:#b8acd0;">{{ r.label }}</div>
+          <div style="display:flex;height:8px;background:rgba(255,255,255,.07);"><div style="width:{{ r.rPct }};background:{{ R.color }};"></div></div>
+          <div style="text-align:right;font:800 21px 'Barlow Condensed';">{{ r.r }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:585px;top:846px;width:750px;height:234px;overflow:hidden;background:#120b20;clip-path:polygon(18px 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%,0 18px);">
+    <div style="position:absolute;left:18px;right:18px;top:10px;display:flex;flex-direction:column;gap:3px;transform:{{ sbY }};transition:transform .36s cubic-bezier(.5,0,.2,1);">
+      <sc-for list="{{ lanes }}" as="ln" hint-placeholder-count="5">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 96px minmax(0,1fr);height:41px;">
+          <div style="display:grid;grid-template-columns:40px minmax(0,1fr) 34px 148px;gap:8px;align-items:center;">
+            <div style="position:relative;width:40px;height:40px;">
+              <img src="{{ ln.lp.img }}" style="width:40px;height:40px;display:block;border-radius:4px;filter:{{ ln.lp.filter }};">
+              <div style="position:absolute;right:-4px;bottom:-3px;min-width:18px;height:16px;padding:0 2px;background:#0b0714;display:grid;place-items:center;font:700 13px 'Barlow Condensed';">{{ ln.lp.lvl }}</div>
+              <sc-if value="{{ ln.lp.dead }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;display:grid;place-items:center;font:800 22px 'Barlow Condensed';background:rgba(11,7,20,.55);">{{ ln.lp.respawn }}</div></sc-if>
+            </div>
+            <div style="display:flex;flex-direction:column;min-width:0;">
+              <div style="font:600 13px/1.1 'Barlow';color:#c9bedc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ ln.lp.name }}</div>
+              <div style="font:800 19px/1.05 'Barlow Condensed';">{{ ln.lp.kda }}</div>
+            </div>
+            <div style="text-align:right;font:700 17px 'Barlow Condensed';color:#d8cfe8;">{{ ln.lp.cs }}</div>
+            <div style="display:flex;gap:1px;"><sc-for list="{{ ln.lp.items }}" as="it" hint-placeholder-count="7"><div style="width:20px;height:20px;background:#0b0714;border-radius:{{ it.radius }};overflow:hidden;margin-left:{{ it.ml }};"><sc-if value="{{ it.has }}" hint-placeholder-val="{{ true }}"><img src="{{ it.src }}" style="width:20px;height:20px;display:block;"></sc-if></div></sc-for></div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#0b0714;margin:0 6px;">
+            <div style="font:800 16px/1 'Barlow Condensed';color:{{ ln.color }};">{{ ln.diffText }}</div>
+            <div style="display:flex;width:60px;height:4px;"><div style="width:{{ ln.pct }};background:{{ L.color }};"></div><div style="flex:1;background:{{ R.color }};"></div></div>
+            <div style="font:700 10px 'Barlow';letter-spacing:.18em;color:#b8acd0;">{{ ln.role }}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:148px 34px minmax(0,1fr) 40px;gap:8px;align-items:center;">
+            <div style="display:flex;flex-direction:row-reverse;gap:1px;"><sc-for list="{{ ln.rp.items }}" as="it" hint-placeholder-count="7"><div style="width:20px;height:20px;background:#0b0714;border-radius:{{ it.radius }};overflow:hidden;margin-right:{{ it.ml }};"><sc-if value="{{ it.has }}" hint-placeholder-val="{{ true }}"><img src="{{ it.src }}" style="width:20px;height:20px;display:block;"></sc-if></div></sc-for></div>
+            <div style="font:700 17px 'Barlow Condensed';color:#d8cfe8;">{{ ln.rp.cs }}</div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;min-width:0;">
+              <div style="font:600 13px/1.1 'Barlow';color:#c9bedc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">{{ ln.rp.name }}</div>
+              <div style="font:800 19px/1.05 'Barlow Condensed';">{{ ln.rp.kda }}</div>
+            </div>
+            <div style="position:relative;width:40px;height:40px;">
+              <img src="{{ ln.rp.img }}" style="width:40px;height:40px;display:block;border-radius:4px;filter:{{ ln.rp.filter }};">
+              <div style="position:absolute;left:-4px;bottom:-3px;min-width:18px;height:16px;padding:0 2px;background:#0b0714;display:grid;place-items:center;font:700 13px 'Barlow Condensed';">{{ ln.rp.lvl }}</div>
+              <sc-if value="{{ ln.rp.dead }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;display:grid;place-items:center;font:800 22px 'Barlow Condensed';background:rgba(11,7,20,.55);">{{ ln.rp.respawn }}</div></sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="position:absolute;left:18px;right:18px;top:0;bottom:0;display:flex;flex-direction:column;transform:{{ fightY }};transition:transform .36s cubic-bezier(.2,.8,.2,1) .12s;">
+      <div style="display:grid;grid-template-columns:1fr 200px 1fr;align-items:center;height:78px;">
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <div style="font:700 13px 'Barlow';letter-spacing:.22em;color:#e8429a;">TEAMFIGHT</div>
+          <div style="font:800 24px 'Barlow Condensed';">23:58 – 24:31</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:14px;font:800 54px/1 'Barlow Condensed';">
+          <div style="color:{{ L.color }};">{{ L.fightKills }}</div><div style="color:#b8acd0;font-size:36px;">:</div><div style="color:{{ R.color }};">{{ R.fightKills }}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+          <div style="font:700 13px 'Barlow';letter-spacing:.22em;color:#b8acd0;">GOLD-SWING · DANACH</div>
+          <div style="font:800 24px 'Barlow Condensed';"><span style="color:{{ fight.swingColor }};">{{ fight.swing }}</span> · BARON</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;">
+        <sc-for list="{{ fight.kills }}" as="k" hint-placeholder-count="5">
+          <div style="display:flex;flex-direction:column;gap:6px;padding:8px;background:#0b0714;border-top:4px solid {{ k.color }};">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <img src="{{ k.killer }}" style="width:44px;height:44px;border-radius:4px;display:block;">
+              <div style="width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:10px solid {{ k.color }};"></div>
+              <img src="{{ k.victim }}" style="width:44px;height:44px;border-radius:4px;display:block;filter:grayscale(1) brightness(.6);">
+            </div>
+            <div style="font:700 15px 'Barlow Condensed';color:#d8cfe8;">{{ k.t }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:12px;font:700 16px 'Barlow';letter-spacing:.08em;">
+        <div>{{ L.tag }} im Fight <span style="font-family:'Barlow Condensed';font-size:20px;font-weight:800;">{{ L.fightKda }}</span></div>
+        <div><span style="font-family:'Barlow Condensed';font-size:20px;font-weight:800;">{{ R.fightKda }}</span> {{ R.tag }} im Fight</div>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ showZones }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:395px;top:0;width:1145px;height:60px;border:2px dashed #ff5ca8;box-sizing:border-box;pointer-events:none;"></div>
+  <div style="position:absolute;left:600px;top:850px;width:730px;height:230px;border:2px dashed #ff5ca8;box-sizing:border-box;pointer-events:none;"></div>
+  <div style="position:absolute;left:0;top:135px;width:80px;height:505px;border:2px dashed #5ee08a;box-sizing:border-box;pointer-events:none;"></div>
+  <div style="position:absolute;left:1840px;top:135px;width:80px;height:505px;border:2px dashed #5ee08a;box-sizing:border-box;pointer-events:none;"></div>
+  <div style="position:absolute;left:1640px;top:800px;width:280px;height:280px;border:2px dashed #5ee08a;box-sizing:border-box;display:grid;place-items:center;font:500 16px 'JetBrains Mono',monospace;color:#5ee08a;pointer-events:none;">MINIMAP · FREI</div>
+  <div style="position:absolute;left:1560px;top:150px;width:260px;height:240px;border:2px dashed #f2c14e;box-sizing:border-box;display:grid;place-items:center;font:500 16px 'JetBrains Mono',monospace;color:#f2c14e;pointer-events:none;">RIOT KILL-FEED</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;scene&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ingame&quot;,&quot;h2h&quot;,&quot;fight&quot;,&quot;starting&quot;,&quot;pause&quot;,&quot;lineup&quot;,&quot;post-overview&quot;,&quot;post-lanes&quot;],&quot;default&quot;:&quot;ingame&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;sgSide&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;left&quot;,&quot;right&quot;],&quot;default&quot;:&quot;left&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Teams&quot;},&quot;sgColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;options&quot;:[&quot;#9b4dff&quot;,&quot;#b06bff&quot;,&quot;#7a3df0&quot;],&quot;default&quot;:&quot;#9b4dff&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Teams&quot;},&quot;oppColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;options&quot;:[&quot;#e5484d&quot;,&quot;#2fb7c4&quot;,&quot;#f2a93b&quot;,&quot;#3e8bff&quot;],&quot;default&quot;:&quot;#e5484d&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Teams&quot;},&quot;oppName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Nordlicht Esports&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Teams&quot;},&quot;oppTag&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;NLE&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Teams&quot;},&quot;popup&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;firstblood&quot;,&quot;baron&quot;,&quot;steal&quot;,&quot;quadra&quot;,&quot;inhib&quot;],&quot;default&quot;:&quot;baron&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Ingame&quot;},&quot;motion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Ingame&quot;},&quot;showGame&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Ingame&quot;},&quot;showZones&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Ingame&quot;},&quot;pauseText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Technische Pause&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { t: 0 };
+  componentDidMount() { this.iv = setInterval(() => { if (this.props.motion) this.setState(s => ({ t: s.t + 1 })); }, 1000); }
+  componentWillUnmount() { clearInterval(this.iv); }
+  renderVals() {
+    const P = this.props, t = this.state.t;
+    const side = P.sgSide ?? 'left', scene = P.scene ?? 'ingame', motion = !!P.motion;
+    const DD = 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img';
+    const img = c => `${DD}/champion/${c}.png`;
+    const splash = c => `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${c}_0.jpg`;
+    const items = arr => arr.map((id, i) => ({ has: !!id, src: id ? `${DD}/item/${id}.png` : '', radius: i === 6 ? '50%' : '3px', ml: i === 6 ? '3px' : '0px' }));
+    const K = n => (n / 1000).toFixed(1) + 'k';
+    const DR = { infernal: '#ff6a3d', ocean: '#3ec5e6', mountain: '#c79a5b', cloud: '#c8d6e5', hextech: '#5fe0d0', chemtech: '#9be03b', elder: '#f2e6c4' };
+    const CL = { diamond: 'polygon(50% 0,100% 50%,50% 100%,0 50%)', hex: 'polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)', shield: 'polygon(0 0,100% 0,100% 62%,50% 100%,0 62%)', penta: 'polygon(50% 0,100% 38%,82% 100%,18% 100%,0 38%)', tower: 'polygon(20% 0,80% 0,80% 30%,100% 30%,100% 100%,0 100%,0 30%,20% 30%)', circle: 'circle(50%)' };
+    const roles = ['TOP', 'JGL', 'MID', 'ADC', 'SUP'];
+    const mk = (r, i) => ({ role: roles[i], name: r[0], champ: r[1], champName: r[2], lvl: r[3], k: r[4], d: r[5], a: r[6], cs: r[7], gold: r[8], wards: r[9], kp: r[10], items: items(r[11]), dead: !!r[12], respawn: r[12] || '' });
+    const sgP = [
+      ['Panzerkröte', 'Aatrox', 'Aatrox', 16, 4, 2, 5, 231, 11200, 12, 64, [3071, 6333, 3047, 3053, 0, 0, 3364]],
+      ['Saarfuchs', 'Sejuani', 'Sejuani', 14, 2, 1, 11, 168, 9400, 28, 93, [6665, 3111, 3068, 0, 0, 0, 3364]],
+      ['Völklingen', 'Ahri', 'Ahri', 16, 5, 1, 6, 247, 11800, 15, 79, [6655, 3020, 3157, 3089, 0, 0, 3340]],
+      ['Hüttenwerk', 'Jinx', 'Jinx', 15, 3, 2, 7, 262, 12000, 11, 71, [3031, 3006, 3094, 6672, 0, 0, 3363]],
+      ['Stahlherz', 'Thresh', 'Thresh', 12, 0, 3, 12, 38, 6900, 52, 86, [3190, 3117, 3109, 0, 0, 0, 3364]],
+    ].map(mk);
+    const opP = [
+      ['Polarlicht', 'Renekton', 'Renekton', 15, 2, 3, 2, 219, 10100, 10, 44, [6692, 3047, 3071, 0, 0, 0, 3340]],
+      ['Fjordwolf', 'LeeSin', 'Lee Sin', 14, 3, 4, 3, 154, 9000, 24, 67, [3142, 3111, 6610, 0, 0, 0, 3364], 18],
+      ['Nordwind', 'Orianna', 'Orianna', 15, 2, 2, 4, 239, 10600, 14, 67, [6653, 3020, 3165, 0, 0, 0, 3340]],
+      ['Eissturm', 'Kaisa', "Kai'Sa", 14, 2, 2, 3, 248, 10400, 9, 56, [3115, 3006, 3153, 0, 0, 0, 3363]],
+      ['Gletscher', 'Nautilus', 'Nautilus', 11, 0, 3, 6, 31, 6000, 47, 67, [2065, 3047, 0, 0, 0, 0, 3364]],
+    ].map(mk);
+    const deco = (ps) => ps.map(p => ({ ...p, img: img(p.champ), splash: splash(p.champ), kda: `${p.k}/${p.d}/${p.a}`, goldK: K(p.gold), filter: p.dead ? 'grayscale(1) brightness(.55)' : 'none' }));
+    const sgCol = P.sgColor ?? '#9b4dff', opCol = P.oppColor ?? '#e5484d';
+    const hasOppLogo = false;
+    const mkTeam = (o) => {
+      const players = deco(o.players);
+      const kills = players.reduce((s, p) => s + p.k, 0), gold = players.reduce((s, p) => s + p.gold, 0);
+      return { ...o, players, playersRev: [...players].reverse(), kills, gold, goldK: K(gold), glow: o.color + '30', hasLogo: !!o.logo, noLogo: !o.logo,
+        pips: [0, 1].map(i => i < o.series ? o.color : 'rgba(255,255,255,.18)'), hasSoul: o.drakesRaw.length >= 4, drakes: o.drakesRaw.map(d => DR[d]) };
+    };
+    const sg = mkTeam({ key: 'sg', name: 'SaarGaming', tag: 'SG', logo: 'assets/sg-logo.png', color: sgCol, towers: 6, grubs: 4, barons: 1, series: 1, seriesPost: 2, drakesRaw: ['infernal', 'ocean', 'infernal'], players: sgP,
+      fearless: ['Gnar', 'Viego', 'Syndra', 'Ezreal', 'Rakan'].map(img), fightKills: 4, fightKda: '4/1/9' });
+    const op = mkTeam({ key: 'op', name: P.oppName ?? 'Nordlicht Esports', tag: P.oppTag ?? 'NLE', logo: hasOppLogo ? '' : '', color: opCol, towers: 3, grubs: 2, barons: 0, series: 0, seriesPost: 0, drakesRaw: ['cloud'], players: opP,
+      fearless: ['KSante', 'Nidalee', 'Azir', 'Varus', 'Alistar'].map(img), fightKills: 1, fightKda: '1/4/2' });
+    const L = side === 'left' ? sg : op, R = side === 'left' ? op : sg;
+    L.sideLabel = 'BLAUE SEITE'; R.sideLabel = 'ROTE SEITE';
+    const diff = L.gold - R.gold;
+    const lanes = L.players.map((lp, i) => {
+      const rp = R.players[i], d = lp.gold - rp.gold;
+      const g15 = { sg: [5480, 4700, 6020, 5900, 3200], op: [5210, 4900, 5600, 5750, 3300] };
+      const gl = g15[L.key][i], gr = g15[R.key][i], gd = gl - gr;
+      return { role: roles[i], lp, rp, diffText: (d === 0 ? '±0' : '+' + Math.abs(d).toLocaleString('de-DE')), color: d >= 0 ? L.color : R.color,
+        pct: Math.round(lp.gold / (lp.gold + rp.gold) * 100) + '%', g15L: gl.toLocaleString('de-DE'), g15R: gr.toLocaleString('de-DE'),
+        g15Diff: '+' + Math.abs(gd).toLocaleString('de-DE'), g15Color: gd >= 0 ? L.color : R.color, g15Pct: Math.round(gl / (gl + gr) * 100) + '%' };
+    });
+    const h = lanes[2], pct = (a, b) => [Math.round(a / Math.max(a, b) * 100) + '%', Math.round(b / Math.max(a, b) * 100) + '%'];
+    const row = (label, a, b, la, lb) => { const [x, y] = pct(a || 0.01, b || 0.01); return { label, l: la ?? a, r: lb ?? b, lPct: x, rPct: y }; };
+    const h2h = { role: 'MID', lp: h.lp, rp: h.rp, rows: [
+      row('LEVEL', h.lp.lvl, h.rp.lvl), row('K/D/A', h.lp.k + h.lp.a, h.rp.k + h.rp.a, h.lp.kda, h.rp.kda), row('CS', h.lp.cs, h.rp.cs),
+      row('GOLD', h.lp.gold, h.rp.gold, h.lp.goldK, h.rp.goldK), row('WARDS', h.lp.wards, h.rp.wards), row('KP %', h.lp.kp, h.rp.kp) ] };
+    const sgKills = [['24:02', 'Jinx', 'LeeSin'], ['24:05', 'Ahri', 'Orianna'], ['24:12', 'Aatrox', 'Renekton'], ['24:16', 'Jinx', 'Kaisa']];
+    const fight = { swing: '+2.8k ' + sg.tag, swingColor: sg.color,
+      kills: [...sgKills.slice(0, 2).map(k => ({ t: k[0], killer: img(k[1]), victim: img(k[2]), color: sg.color })), { t: '24:09', killer: img('Nautilus'), victim: img('Thresh'), color: op.color }, ...sgKills.slice(2).map(k => ({ t: k[0], killer: img(k[1]), victim: img(k[2]), color: sg.color }))] };
+    const pops = {
+      firstblood: { team: sg.name.toUpperCase(), color: sg.color, iconColor: '#e8429a', clip: CL.shield, title: 'FIRST BLOOD', sub: 'Völklingen (Ahri) erwischt Nordwind · 03:12' },
+      baron: { team: sg.name.toUpperCase(), color: sg.color, iconColor: '#b56cff', clip: CL.hex, title: 'BARON NASHOR', sub: 'gesichert · Buff aktiv bis 27:37' },
+      quadra: { team: sg.name.toUpperCase(), color: sg.color, iconColor: '#e8429a', clip: CL.shield, title: 'QUADRA KILL', sub: 'Hüttenwerk · Jinx' },
+      steal: { team: op.name.toUpperCase(), color: op.color, iconColor: DR.infernal, clip: CL.diamond, title: 'DRACHE GESTOHLEN', sub: 'Fjordwolf (Lee Sin) stiehlt den Infernal-Drachen' },
+      inhib: { team: sg.name.toUpperCase(), color: sg.color, iconColor: '#d8cfe8', clip: CL.tower, title: 'INHIBITOR', sub: 'Mid-Inhibitor · Respawn 29:37' },
+    };
+    const order = ['firstblood', 'baron', 'steal', 'quadra', 'inhib'];
+    const ph = t % 18;
+    let popKey = P.popup ?? 'baron', fightOn = scene === 'fight';
+    if (motion) { popKey = ph >= 1 && ph <= 5 ? order[Math.floor(t / 18) % order.length] : 'none'; fightOn = ph >= 8 && ph <= 15; }
+    const pop = pops[popKey] || pops.baron, popOn = popKey !== 'none' && !!pops[popKey];
+    const secs = 24 * 60 + 37 + t, clock = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+    const cd = Math.max(0, 299 - t), countdown = `${String(Math.floor(cd / 60)).padStart(2, '0')}:${String(cd % 60).padStart(2, '0')}`;
+    const f = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    const timers = [
+      { label: 'DRACHE', time: f(Math.max(0, 72 - t)), color: DR.infernal, clip: CL.diamond, line: 'rgba(255,255,255,.14)' },
+      { label: 'BARON-BUFF ' + sg.tag, time: f(Math.max(0, 151 - t)), color: '#b56cff', clip: CL.hex, line: sg.color },
+      { label: 'INHIB ' + op.tag, time: f(Math.max(0, 212 - t)), color: '#d8cfe8', clip: CL.tower, line: op.color },
+    ];
+    const gs = [0, 0, 40, 120, -80, -200, -150, 60, 300, 520, 410, 380, 800, 1100, 950, 1300, 1700, 1500, 1200, 2100, 2600, 2400, 3100, 2900, 3600, 5200, 5000, 5400, 6800, 7600, 8900, 10200];
+    const marks = { 9: [DR.infernal, CL.diamond, 'sg'], 14: ['#a77bff', CL.circle, 'sg'], 15: [DR.cloud, CL.diamond, 'op'], 21: [DR.ocean, CL.diamond, 'sg'], 25: ['#b56cff', CL.hex, 'sg'], 28: [DR.infernal, CL.diamond, 'sg'] };
+    const max = 10200, H = 108;
+    const goldBars = gs.map((v, m) => {
+      const lv = L.key === 'sg' ? v : -v, hh = Math.max(2, Math.round(Math.abs(lv) / max * H)), mk = marks[m];
+      const mTeamLeft = mk && (mk[2] === L.key);
+      return { m, label: m % 5 === 0, top: (lv >= 0 ? 118 - hh : 120) + 'px', h: hh + 'px', color: lv >= 0 ? L.color : R.color,
+        marker: !!mk, mColor: mk ? mk[0] : '', mClip: mk ? mk[1] : '', mTop: mk ? (mTeamLeft ? '-6px' : '226px') : '0px' };
+    });
+    const W = sg;
+    const cmp = (a, b) => [a >= b ? '#ffffff' : '#9a8fb0', b >= a ? '#ffffff' : '#9a8fb0'];
+    const st = (label, a, b, la, lb) => { const [lc, rc] = cmp(a, b); return { label, l: la ?? a, r: lb ?? b, lCol: lc, rCol: rc }; };
+    const teamStats = [st('KILLS', L.kills, R.kills), st('GOLD', L.gold, R.gold, L.goldK, R.goldK), st('TÜRME', L.towers + 3, R.towers), st('INHIBITOREN', L.key === 'sg' ? 2 : 0, L.key === 'sg' ? 0 : 2),
+      st('DRACHEN', L.drakes.length + (L.key === 'sg' ? 1 : 0), R.drakes.length + (R.key === 'sg' ? 1 : 0)), st('BARONE', L.barons, R.barons), st('GRUBS', L.grubs, R.grubs)];
+    const allPlayers = [...L.players.map((p, i) => ({ ...p, color: L.color, sep: '2px solid rgba(255,255,255,.05)' })), ...R.players.map((p, i) => ({ ...p, color: R.color, sep: i === 0 ? '4px solid #0b0714' : '2px solid rgba(255,255,255,.05)' }))];
+    const ing = ['ingame', 'h2h', 'fight'].includes(scene);
+    return {
+      L, R, W, lanes, h2h, fight, pop, timers, clock, countdown, goldBars, teamStats, allPlayers, gameNo: 2,
+      pauseText: P.pauseText ?? 'Technische Pause',
+      isIngame: ing, isFull: !ing, isStarting: scene === 'starting', isPause: scene === 'pause', isLineup: scene === 'lineup',
+      isPost: scene.startsWith('post'), isPostOverview: scene === 'post-overview', isPostLanes: scene === 'post-lanes',
+      showGameLayer: ing && (P.showGame ?? true), showZones: ing && !!P.showZones,
+      diffText: '+' + (Math.abs(diff) / 1000).toFixed(1) + 'k', diffColor: diff >= 0 ? L.color : R.color, diffLeft: diff >= 0, diffRight: diff < 0,
+      popClip: popOn ? 'polygon(0 0,100% 0,100% 100%,0 100%)' : 'polygon(50% 0,50% 0,50% 100%,50% 100%)', popOpacity: popOn ? 1 : 0,
+      sbY: fightOn ? 'translateY(240px)' : 'translateY(0px)', fightY: fightOn ? 'translateY(0px)' : 'translateY(240px)',
+      h2hX: scene === 'h2h' ? 'translateX(0px)' : 'translateX(-600px)', h2hO: scene === 'h2h' ? 1 : 0,
+    };
+  }
+}
+</script>
+</body>
+</html>

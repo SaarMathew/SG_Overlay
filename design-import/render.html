@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>html,body{margin:0;background:#000}</style>
+</helmet>
+<div style="width:1920px;height:1080px;position:relative;">
+<dc-import name="SG Overlay" scene="{{ scene }}" sg-side="{{ side }}" popup="{{ popup }}" opp-color="{{ opp }}" hint-size="1920px,1080px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const q = new URLSearchParams(location.search);
+    return { scene: q.get('scene') || 'ingame', side: q.get('side') || 'left', popup: q.get('popup') || 'none', opp: q.get('opp') || '#e5484d' };
+  }
+}
+</script>
+</body>
+</html>

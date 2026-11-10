@@ -2,7 +2,8 @@
   import { connect } from '../lib/state.svelte.ts';
   import { orient } from '../lib/orient.ts';
   import Stage from '../lib/Stage.svelte';
-  import TeamLogo from '../lib/TeamLogo.svelte';
+  import SceneFrame from '../lib/SceneFrame.svelte';
+  import FsTeam from '../lib/FsTeam.svelte';
   import { draftStreamUrl } from '../../../shared/draft.ts';
 
   // Pick & ban scene: our branded background and centre block, with drafter.lol's official
@@ -15,43 +16,39 @@
 </script>
 
 <Stage match={m}>
-  <div class="scene-bg"></div>
-  {#if m && s}
-    <div class="centre">
-      <div class="eyebrow">{m.leagueLine}</div>
-      <div class="title">Game {s.gameNumber} · <span>Pick &amp; Ban</span></div>
-      <div class="score">
-        <TeamLogo team={m.teamA} size={96} />
-        <span class="tag">{m.teamA.tag}</span>
-        <span class="n a">{s.scoreA}</span><span class="d">–</span><span class="n b">{s.scoreB}</span>
-        <span class="tag">{m.teamB.tag}</span>
-        <TeamLogo team={m.teamB} size={96} />
+  <SceneFrame kicker={m?.leagueLine ?? ''} badge={m && s ? `BO${m.format} · SPIEL ${s.gameNumber}` : ''}>
+    {#if m && s}
+      <div class="centre">
+        <div class="sc-kicker">Spiel {s.gameNumber}</div>
+        <div class="title">PICK &amp; BAN</div>
+        <div class="score">
+          <div class="t l"><FsTeam team={m.teamA} size={64} /><span>{m.teamA.tag}</span></div>
+          <div class="n">{s.scoreA} : {s.scoreB}</div>
+          <div class="t r"><FsTeam team={m.teamB} size={64} /><span>{m.teamB.tag}</span></div>
+        </div>
+        {#if !url}<div class="waiting">Draft startet gleich</div>{/if}
       </div>
-      <div class="fmt">Best of {m.format}{m.caster ? ` · Caster ${m.caster}` : ''}</div>
-      {#if !url}<div class="waiting">Draft starting soon</div>{/if}
-    </div>
-    {#if url}
-      {#key url}
-        <iframe class="drafter" src={url} title="Pick and ban" scrolling="no"></iframe>
-      {/key}
+      {#if url}
+        {#key url}
+          <iframe class="drafter" src={url} title="Pick and ban" scrolling="no"></iframe>
+        {/key}
+      {/if}
     {/if}
-  {/if}
+  </SceneFrame>
 </Stage>
 
 <style>
   /* free area of the drafter.lol stream view at 1920x1080: x 500-1420, y 160-790 */
-  .centre { position: absolute; left: 520px; right: 520px; top: 230px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-  .eyebrow { animation: rise .6s ease-out both; }
-  .title { font-size: 46px; font-weight: 900; letter-spacing: -.5px; margin-top: 10px; animation: rise .6s .1s ease-out both; }
-  .title span { background: linear-gradient(90deg, var(--sg), var(--sg-glow)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .score { display: flex; align-items: center; gap: 18px; margin-top: 40px; padding: 20px 32px; background: var(--panel);
-           border: 1px solid var(--line); border-radius: 18px; animation: rise .6s .2s ease-out both; }
-  .tag { font-size: 30px; font-weight: 800; }
-  .n { font-size: 56px; font-weight: 900; font-feature-settings: "tnum" 1; }
-  .n.a { color: var(--a); } .n.b { color: var(--b); }
-  .d { font-size: 40px; color: var(--dim); }
-  .fmt { margin-top: 18px; font-size: 15px; font-weight: 600; letter-spacing: 1px; color: var(--muted); animation: fade .8s .4s both; }
-  .waiting { margin-top: 60px; font-size: 22px; font-weight: 700; color: var(--muted); animation: pulse 1.6s ease-in-out infinite; }
+  .centre { position: absolute; left: 520px; right: 520px; top: 250px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; animation: rise .6s ease-out both; }
+  .sc-kicker { font-size: 28px; }
+  .title { font: 800 96px/1 var(--font-num); letter-spacing: .02em; }
+  .score { margin-top: 36px; width: 800px; height: 96px; display: grid; grid-template-columns: 1fr 140px 1fr; background: var(--scene-panel); text-align: left;
+           clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%, 0 16px); }
+  .t { display: flex; align-items: center; gap: 16px; font: 800 34px var(--font-num); }
+  .t.l { padding-left: 28px; border-left: 8px solid var(--a); }
+  .t.r { flex-direction: row-reverse; padding-right: 28px; border-right: 8px solid var(--b); }
+  .n { display: flex; align-items: center; justify-content: center; font: 800 44px var(--font-num); white-space: pre; }
+  .waiting { margin-top: 40px; font: 700 24px var(--font); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .4; } }
   .drafter { position: absolute; inset: 0; width: 1920px; height: 1080px; border: 0; background: transparent; }
 </style>

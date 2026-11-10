@@ -48,7 +48,7 @@ export function emptyIngame(): IngameState {
   return {
     active: false, gameTime: 0, receivedAt: 0, paused: false,
     a: emptyTeam('ORDER'), b: emptyTeam('CHAOS'), goldSource: 'items',
-    timers: [], popups: [], goldHistory: [], playerGoldHistory: [], fights: [],
+    timers: [], inhibTimers: [], soul: null, popups: [], goldHistory: [], playerGoldHistory: [], fights: [],
   };
 }
 

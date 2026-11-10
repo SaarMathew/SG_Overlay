@@ -20,13 +20,13 @@ export function loadTemplates(raw: unknown): Templates {
   return t && t.version === 2 && t.chars ? t : emptyTemplates();
 }
 
-export function toGray(rgba: Uint8Array | Buffer, width: number, x: number, y: number, w: number, h: number): Gray {
+export function toGray(rgba: Uint8Array | Buffer, width: number, x: number, y: number, w: number, h: number, blueWeight = 0.6): Gray {
   const px = new Uint8Array(w * h);
   for (let j = 0; j < h; j++) {
     for (let i = 0; i < w; i++) {
       const o = ((y + j) * width + (x + i)) * 4;
       // the gold text is light grey/yellow on a dark green/blue background
-      px[j * w + i] = Math.max(rgba[o], rgba[o + 1], rgba[o + 2] * 0.6);
+      px[j * w + i] = Math.max(rgba[o], rgba[o + 1], rgba[o + 2] * blueWeight);
     }
   }
   return { w, h, px };
@@ -122,6 +122,11 @@ export function learn(img: Gray, threshold: number, label: string, templates: Te
 /** Exact creep score (yellow number next to the portrait): 1-3 digits and nothing else. */
 export function parseCs(text: string): number | null {
   return /^\d{1,3}$/.test(text) ? Number(text) : null;
+}
+
+/** Objective counter of the spectator score bar ("3", "11"): 1-2 digits and nothing else. */
+export function parseCount(text: string): number | null {
+  return /^\d{1,2}$/.test(text) ? Number(text) : null;
 }
 
 /** Finds "215(716)" in the recognized text (tolerates stray glyphs around it) -> [current, total]. */

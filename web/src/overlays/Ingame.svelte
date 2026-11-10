@@ -7,7 +7,7 @@
   import HeadToHead from './ingame/HeadToHead.svelte';
   import FightRecap from './ingame/FightRecap.svelte';
   import { fmtTime } from '../../../shared/calc.ts';
-  import type { Fight } from '../../../shared/types.ts';
+  import type { Fight, ObjectiveTimer, Popup } from '../../../shared/types.ts';
   import { ROLES } from '../../../shared/types.ts';
 
   const { state: raw } = connect(['match', 'series', 'ingame', 'status', 'ui']);
@@ -24,6 +24,10 @@
   const g = $derived(app.ingame);
   const clock = $derived(g ? (g.paused ? g.gameTime : g.gameTime + Math.min(2, Math.max(0, (now - g.receivedAt) / 1000))) : 0);
   const popup = $derived(g?.popups.find(p => p.from <= now && p.until > now) ?? null);
+  // keep the last popup's content while the box closes towards the centre
+  let lastPop = $state<Popup | null>(null);
+  $effect(() => { if (popup) lastPop = popup; });
+  const pop = $derived(popup ?? lastPop ?? EMPTY_POP);
   const recap = $derived.by(() => {
     const r = app.ui?.fightRecap;
     return r && r.until > now ? g?.fights?.find(f => f.id === r.id) ?? null : null;
@@ -35,9 +39,44 @@
   const laneIdx = $derived(lane ? ROLES.indexOf(lane) : -1);
   const debugBg = new URLSearchParams(location.search).has('bg');
 
-  const POPUP_ICON: Record<string, string> = {
-    dragon: '◆', elder: '◆', baron: 'B', herald: 'H', grubs: 'G', atakhan: 'A', inhib: 'I', ace: '✦', multikill: '✦', firstblood: '✦', tower: 'T',
+  const EMPTY_POP: Popup = { id: 0, kind: 'tower', team: null, title: '', text: '', from: 0, until: 0 };
+  const TIMER_LABEL: Record<ObjectiveTimer['kind'], string> = {
+    dragon: 'DRACHE', elder: 'ÄLTESTER DRACHE', baron: 'BARON', atakhan: 'ATAKHAN', herald: 'HERALD', grubs: 'GRUBS',
+    baronBuff: 'BARON-BUFF', elderBuff: 'ELDER-BUFF',
   };
+  function timerIcon(kind: ObjectiveTimer['kind'], dt?: string): string {
+    if (kind === 'dragon') return dt ? `/assets/objectives/${dt}.png` : '';   // type not known yet: neutral glyph
+    if (kind === 'elder' || kind === 'elderBuff') return '/assets/objectives/elder.png';
+    if (kind === 'baron' || kind === 'baronBuff') return '/assets/objectives/baron.png';
+    if (kind === 'herald') return '/assets/objectives/herald.png';
+    return '/assets/objectives/grub.png';
+  }
+  function popIcon(p: Popup): string {
+    switch (p.kind) {
+      case 'dragon': return p.dragonType ? `/assets/objectives/${p.dragonType}.png` : '';
+      case 'elder': return '/assets/objectives/elder.png';
+      case 'baron': return '/assets/objectives/baron.png';
+      case 'herald': return '/assets/objectives/herald.png';
+      case 'grubs': return '/assets/objectives/grub.png';
+      case 'inhib': return '/assets/objectives/inhib.png';
+      default: return '/assets/objectives/tower.png';
+    }
+  }
+  const popTeam = (p: Popup) => (p.team === 'A' ? app.match?.teamA.name : p.team === 'B' ? app.match?.teamB.name : '')?.toUpperCase() ?? '';
+  function popTitle(p: Popup): string {
+    const stolen = /steal|stolen/i.test(p.text) || /stolen/i.test(p.title);
+    switch (p.kind) {
+      case 'dragon': return /soul/i.test(p.title) ? 'DRACHENSEELE' : stolen ? 'DRACHE GESTOHLEN' : 'DRACHE';
+      case 'elder': return stolen ? 'ÄLTESTER DRACHE GESTOHLEN' : 'ÄLTESTER DRACHE';
+      case 'baron': return stolen ? 'BARON GESTOHLEN' : 'BARON NASHOR';
+      case 'herald': return stolen ? 'HERALD GESTOHLEN' : 'RIFT-HERALD';
+      case 'grubs': return 'VOID-GRUBS';
+      case 'atakhan': return 'ATAKHAN';
+      case 'inhib': return 'INHIBITOR';
+      case 'tower': return 'TURM';
+      default: return p.title.toUpperCase();   // ace, first blood, multikills
+    }
+  }
 </script>
 
 <Stage match={app.match}>
@@ -45,76 +84,71 @@
   {#if g?.active && app.match && app.series}
     <TopBar ingame={g} match={app.match} series={app.series} {clock} />
 
-    {#if g.timers.length}
+    {#if g.timers.length || g.inhibTimers.length}
       <div class="timers">
         {#each g.timers as t (t.id)}
           {@const left = t.at - clock}
-          <div class="timer" class:up={left <= 0 && !t.kind.endsWith('Buff')} class:buff={t.kind.endsWith('Buff')}>
-            <i class="dot {t.kind} {t.dragonType ?? ''}" style:background={t.team ? `var(--${t.team.toLowerCase()})` : null}></i>
-            <span class="lbl">{t.label}{t.team ? ` · ${t.team === 'A' ? app.match.teamA.tag : app.match.teamB.tag}` : ''}</span>
+          {@const buff = t.kind.endsWith('Buff')}
+          {@const tm = t.team === 'A' ? app.match.teamA.tag : t.team === 'B' ? app.match.teamB.tag : ''}
+          <div class="timer" class:up={left <= 0 && !buff} style:--line={t.team ? `var(--${t.team.toLowerCase()})` : 'rgba(255,255,255,.14)'}>
+            {#if timerIcon(t.kind, t.dragonType)}<img src={timerIcon(t.kind, t.dragonType)} alt="" />{:else}<i class="drake"></i>{/if}
+            <span class="lbl">{TIMER_LABEL[t.kind]}{tm && buff ? ` ${tm}` : ''}</span>
             <span class="t">{left <= 0 ? 'UP' : fmtTime(left)}</span>
+          </div>
+        {/each}
+        {#each g.inhibTimers as i}
+          <div class="timer" style:--line="var(--{i.team.toLowerCase()})">
+            <img src="/assets/objectives/inhib.png" alt="" />
+            <span class="lbl">INHIB {i.team === 'A' ? app.match.teamA.tag : app.match.teamB.tag}{i.lane ? ` ${i.lane}` : ''}</span>
+            <span class="t">{fmtTime(Math.max(0, i.at - clock))}</span>
           </div>
         {/each}
       </div>
     {/if}
 
-    {#if popup}
-      {#key popup.id}
-        <div class="popup" style:--c={popup.team ? `var(--${popup.team.toLowerCase()})` : 'var(--dim)'}>
-          <div class="accent"></div>
-          <div class="body">
-            <div class="icon {popup.dragonType ?? ''}">{POPUP_ICON[popup.kind] ?? '•'}</div>
-            <div>
-              <div class="title">{popup.title}</div>
-              <div class="main">{popup.text}</div>
-            </div>
-            {#if popup.detail}<div class="meta">{popup.detail}</div>{/if}
-          </div>
-        </div>
-      {/key}
-    {/if}
+    <div class="popup" class:open={!!popup} style:--c={pop.team ? `var(--${pop.team.toLowerCase()})` : 'var(--accent)'}>
+      <div class="accent"></div>
+      <div class="icon">{#if popIcon(pop)}<img src={popIcon(pop)} alt="" />{:else}<i class="drake"></i>{/if}</div>
+      <div class="body">
+        <div class="kicker"><i></i>{popTeam(pop)}</div>
+        <div class="title">{popTitle(pop)}</div>
+        <div class="sub">{pop.text}{pop.detail ? ` · ${pop.detail}` : ''}</div>
+      </div>
+    </div>
 
     {#if laneIdx >= 0}
       {#key lane}<HeadToHead ingame={g} idx={laneIdx} {v} />{/key}
     {/if}
 
-    <div class="swap" class:away={!!recap}><Scoreboard ingame={g} {v} focus={laneIdx} /></div>
+    <Scoreboard ingame={g} {v} focus={laneIdx} away={!!recap} />
     {#if lastRecap}<FightRecap fight={recap ?? lastRecap} ingame={g} match={app.match} {v} shown={!!recap} />{/if}
   {/if}
 </Stage>
 
 <style>
-  .swap { position: absolute; inset: 0; pointer-events: none; transition: transform .3s cubic-bezier(.2,.8,.2,1), opacity .3s; }
-  .swap.away { transform: translateY(100%); opacity: 0; }
   .debug-bg { position: absolute; inset: 0; background: #111 url(/assets/spectator-midgame.webp) 0 0 / 1920px 1080px no-repeat; }
 
-  .timers { position: absolute; top: 116px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; }
-  .timer { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px 0 10px; white-space: nowrap;
-           background: var(--panel); border: 1px solid var(--line); border-radius: 15px; font-size: 13px; font-weight: 600; animation: fade .3s; }
-  .timer .t { font-weight: 700; color: #fff; min-width: 34px; }
-  .timer .lbl { color: var(--muted); }
-  .timer.up { border-color: rgba(255,255,255,.35); }
+  .timers { position: absolute; top: 112px; left: 0; right: 0; display: flex; justify-content: center; gap: 10px; }
+  .timer { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; white-space: nowrap;
+           background: rgba(18, 11, 32, .94); border-bottom: 3px solid var(--line); animation: fade .3s; }
+  .timer img { width: 20px; height: 20px; display: block; }
+  /* dragon of unknown element (before the rift changes): neutral diamond instead of guessing a type */
+  .drake { display: block; width: 14px; height: 14px; margin: 3px; background: var(--soft); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+  .icon .drake { width: 44px; height: 44px; margin: 8px; }
+  .timer .lbl { font: 700 13px var(--font); letter-spacing: .14em; color: var(--soft); }
+  .timer .t { font: 800 20px var(--font-num); min-width: 40px; }
   .timer.up .t { color: #7dffa8; }
-  .dot { width: 10px; height: 10px; transform: rotate(45deg); border-radius: 2px; display: block; background: #b07cff; }
-  .dot.infernal { background: var(--drag-infernal); } .dot.ocean { background: var(--drag-ocean); }
-  .dot.mountain { background: var(--drag-mountain); } .dot.cloud { background: var(--drag-cloud); }
-  .dot.hextech { background: var(--drag-hextech); } .dot.chemtech { background: var(--drag-chemtech); }
-  .dot.elder { background: var(--drag-elder); } .dot.dragon { background: #e8a33d; }
-  .dot.grubs, .dot.herald, .dot.atakhan { border-radius: 50%; transform: none; background: #b07cff; }
 
-  .popup { position: absolute; top: 162px; left: 50%; transform: translateX(-50%); width: 560px;
-           background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
-           display: flex; animation: pop .35s ease-out both; }
-  .accent { width: 5px; background: var(--c); }
-  .body { padding: 12px 16px; display: flex; align-items: center; gap: 14px; flex: 1; }
-  .icon { width: 44px; height: 44px; border-radius: 8px; background: linear-gradient(135deg, #6c3bd1, #2a1650);
-          display: grid; place-items: center; font-weight: 800; font-size: 18px; flex: none; }
-  .icon.infernal { background: var(--drag-infernal); } .icon.ocean { background: var(--drag-ocean); }
-  .icon.mountain { background: var(--drag-mountain); } .icon.cloud { background: var(--drag-cloud); color: #222; }
-  .icon.hextech { background: var(--drag-hextech); color: #123; } .icon.chemtech { background: var(--drag-chemtech); color: #222; }
-  .icon.elder { background: var(--drag-elder); color: #222; }
-  .title { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 1.4px; text-transform: uppercase; }
-  .main { font-size: 20px; font-weight: 700; margin-top: 2px; }
-  .meta { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--c); text-transform: uppercase; letter-spacing: 1px; }
-  @keyframes pop { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  .popup { position: absolute; top: 168px; left: 50%; margin-left: -310px; width: 620px; height: 104px; display: flex; align-items: stretch;
+           background: var(--panel); clip-path: polygon(50% 0, 50% 0, 50% 100%, 50% 100%); opacity: 0;
+           transition: clip-path .32s cubic-bezier(.2, .8, .2, 1), opacity .2s; }
+  .popup.open { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); opacity: 1; }
+  .accent { width: 10px; background: var(--c); flex: none; }
+  .icon { width: 104px; display: grid; place-items: center; background: var(--bg); flex: none; }
+  .icon img { width: 60px; height: 60px; display: block; }
+  .body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 0 24px; min-width: 0; }
+  .kicker { display: flex; align-items: center; gap: 8px; font: 700 15px var(--font); letter-spacing: .18em; }
+  .kicker i { width: 10px; height: 10px; background: var(--c); }
+  .title { font: 800 46px/1 var(--font-num); letter-spacing: .01em; white-space: nowrap; }
+  .sub { font: 600 17px var(--font); color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>

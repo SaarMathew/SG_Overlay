@@ -1,28 +1,32 @@
-/* SaarGaming overlay design tokens (DESIGN.md §12) */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+/* SaarGaming overlay design tokens – Claude Design "SG Overlay" (design-import/SG Overlay.dc.html) */
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Barlow+Condensed:wght@500;600;700;800&display=swap');
 
 :root {
   --sg: #9b4dff;
   --sg-glow: #e8429a;
+  --accent: #e8429a;            /* broadcast accent: kickers, VS, Fearless */
   --opp: #e5484d;
-  --a: var(--sg);               /* team A colour, overridden from match settings */
-  --b: var(--opp);              /* team B colour */
+  --a: var(--sg);               /* left team colour, overridden from match settings */
+  --b: var(--opp);              /* right team colour */
   --bg: #0b0714;
-  --cover: #100a1c;             /* fully opaque: panels on top of Riot HUD elements */
+  --cover: #120b20;             /* fully opaque: panels on top of Riot HUD elements */
   --cover-2: #1e1430;
-  --panel: rgba(16, 10, 28, 0.90);
-  --panel-2: rgba(30, 20, 48, 0.92);
+  --panel: #120b20;
+  --panel-2: #1a1029;
   --line: rgba(255, 255, 255, 0.08);
-  --text: #f5f5f7;
-  --muted: #a1a1aa;
+  --text: #f4f0fa;
+  --muted: #b8acd0;
+  --soft: #d8cfe8;
   --dim: #6b6b78;
-  --radius: 10px;
+  --radius: 0px;                /* the design uses hard, angled edges */
+  --font: 'Barlow', sans-serif;
+  --font-num: 'Barlow Condensed', sans-serif;  /* numbers and names, tabular */
   --drag-infernal: #ff6a3d; --drag-ocean: #3db8ff; --drag-mountain: #c9a46a;
   --drag-cloud: #cfe6ff; --drag-hextech: #3df0e0; --drag-chemtech: #b6f03d; --drag-elder: #d7c9a4;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { overflow: hidden; background: transparent; }
-body { font-family: 'Inter', sans-serif; color: var(--text); font-feature-settings: "tnum" 1; }
+body { font-family: var(--font); color: var(--text); font-variant-numeric: tabular-nums; }
 
 .scene-bg {
   position: absolute; inset: 0; background:
@@ -41,3 +45,7 @@ body { font-family: 'Inter', sans-serif; color: var(--text); font-feature-settin
 
 @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* full-screen scenes */
+:root { --scene-panel: #160e27; --scene-soft: #d8cfe8; }
+.sc-kicker { font: 700 34px var(--font-num); letter-spacing: .32em; color: var(--accent); text-transform: uppercase; }

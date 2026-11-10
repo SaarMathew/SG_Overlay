@@ -1,5 +1,6 @@
 // Shapes of the raw Riot API payloads we consume (only the fields we use).
 import { EventEmitter } from 'node:events';
+import type { DragonType } from '../../shared/types.ts';
 
 export interface RawItem { itemID: number; slot: number; count: number }
 export interface RawSpell { displayName?: string; rawDisplayName?: string }
@@ -31,6 +32,8 @@ export interface RawEvent {
   Stolen?: string;
   TurretKilled?: string;
   InhibKilled?: string;
+  InhibRespawned?: string;
+  InhibRespawningSoon?: string;
   KillStreak?: number;
   Acer?: string;
   AcingTeam?: string;
@@ -41,7 +44,7 @@ export interface RawEvent {
 export interface AllGameData {
   allPlayers: RawPlayer[];
   events: { Events: RawEvent[] };
-  gameData: { gameTime: number; gameMode?: string };
+  gameData: { gameTime: number; gameMode?: string; mapTerrain?: string };
 }
 
 export interface CsMember {
@@ -62,9 +65,17 @@ export interface ChampSelectSession {
   actions?: { actorCellId: number; type: string; completed: boolean; championId: number }[][];
 }
 
+/** One team's half of the spectator score bar. Counters are null when unreadable; dragonTypes[i] = type of the i-th dragon icon (null = no icon / unknown type). */
+export interface TopbarSide {
+  dragons: number | null; barons: number | null; grubs: number | null; towers: number | null;
+  dragonTypes: (DragonType | null)[];
+}
+
 /** OCR result per scoreboard row: [current, total] or null if unreadable. */
 export interface GoldReading {
   order: ([number, number] | null)[]; chaos: ([number, number] | null)[];
+  /** objective counters + dragon icons of Riot's score bar (absent when the score bar is not read) */
+  topbar?: { order: TopbarSide; chaos: TopbarSide };
   /** exact CS per row (absent in older recordings / when the CS regions are not read) */
   cs?: { order: (number | null)[]; chaos: (number | null)[] };
 }

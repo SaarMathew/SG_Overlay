@@ -1,120 +1,104 @@
 <script lang="ts">
-  import type { Fight, FightObjective, IngameState, MatchConfig, PlayerLive } from '../../../../shared/types.ts';
+  import type { Fight, FightObjective, IngameState, MatchConfig, TeamKey } from '../../../../shared/types.ts';
   import { fmtTime } from '../../../../shared/calc.ts';
   import { champIcon } from '../../lib/dd.ts';
 
-  let { fight, ingame, match, v, shown }: { fight: Fight; ingame: IngameState; match: MatchConfig; v: string; shown: boolean } = $props();
+  let { fight, ingame: _ingame, match, v, shown }: { fight: Fight; ingame: IngameState; match: MatchConfig; v: string; shown: boolean } = $props();
 
   const KIND: Record<FightObjective['kind'], string> = {
-    dragon: 'Dragon', elder: 'Elder', baron: 'Baron', herald: 'Herald', grubs: 'Grub', atakhan: 'Atakhan', tower: 'Tower', inhib: 'Inhibitor',
+    dragon: 'DRACHE', elder: 'ELDER', baron: 'BARON', herald: 'HERALD', grubs: 'GRUBS', atakhan: 'ATAKHAN', tower: 'TURM', inhib: 'INHIB',
   };
-  const MULTI_SHORT = ['', '', 'DOUBLE', 'TRIPLE', 'QUADRA', 'PENTA'];
-  const tag = (k: 'A' | 'B') => (k === 'A' ? match.teamA.tag : match.teamB.tag);
+  const MULTI = ['', '', 'DOUBLE', 'TRIPLE', 'QUADRA', 'PENTA'];
+  const tag = (k: TeamKey) => (k === 'A' ? match.teamA.tag : match.teamB.tag);
+  const col = (k: TeamKey) => (k === 'A' ? 'var(--a)' : 'var(--b)');
 
-  type Stat = { k: number; d: number; a: number; killed: string[]; mark: string };
-  function stat(p: PlayerLive, team: 'A' | 'B'): Stat {
-    const s: Stat = { k: 0, d: 0, a: 0, killed: [], mark: '' };
-    for (const x of fight.kills) {
-      if (x.killer.team === team && x.killer.champ === p.champion) {
-        s.k++; s.killed.push(x.victim.champ);
-        const m = fight.multikills.find(m => m.champ === p.champion && Math.abs(m.t - x.t) <= 1.5);
-        if (m) s.mark = MULTI_SHORT[Math.min(m.streak, 5)];
-        else if (x.shutdown && !s.mark) s.mark = 'SHUTDOWN';
-      }
-      if (x.victim.team === team && x.victim.champ === p.champion) s.d++;
-      if (x.killer.team === team && x.assisters.includes(p.champion)) s.a++;
-    }
-    return s;
-  }
-  const statsA = $derived(ingame.a.players.map(p => stat(p, 'A')));
-  const statsB = $derived(ingame.b.players.map(p => stat(p, 'B')));
+  const MAX = 5;
+  const kills = $derived(fight.kills.length > MAX ? fight.kills.slice(0, MAX - 1) : fight.kills);
+  const more = $derived(fight.kills.length > MAX ? fight.kills.length - (MAX - 1) : 0);
 
-  const objs = $derived(fight.objectives.reduce<(FightObjective & { n: number })[]>((out, o) => {
-    const l = out.at(-1);
-    if (l && l.kind === o.kind && l.team === o.team) l.n++; else out.push({ ...o, n: 1 });
-    return out;
-  }, []));
-  const objLabel = (o: FightObjective & { n: number }) => {
-    const name = o.kind === 'dragon' && o.dragonType ? o.dragonType[0].toUpperCase() + o.dragonType.slice(1) : KIND[o.kind];
-    return o.n > 1 ? `${o.n} ${name}s` : name;
+  const badge = (k: Fight['kills'][number]) => {
+    const m = fight.multikills.find(m => m.champ === k.killer.champ && Math.abs(m.t - k.t) <= 1.5);
+    return m ? MULTI[Math.min(m.streak, 5)] : k.shutdown ? 'SHUTDOWN' : '';
   };
+
+  const assists = (t: TeamKey) => fight.kills.reduce((n, k) => n + (k.killer.team === t ? k.assisters.length : 0), 0);
+  const kdaA = $derived(`${fight.killsA}/${fight.killsB}/${assists('A')}`);
+  const kdaB = $derived(`${fight.killsB}/${fight.killsA}/${assists('B')}`);
+
   const swing = $derived(fight.goldSwing);
-  const swingSide = $derived(swing === null || swing === 0 ? null : swing > 0 ? 'a' : 'b');
+  const swingTeam = $derived<TeamKey | null>(swing === null || swing === 0 ? null : swing > 0 ? 'A' : 'B');
+  const swingText = $derived(swing === null ? '–' : `+${(Math.abs(swing) / 1000).toFixed(1)}k`);
+  const after = $derived(fight.objectives[0] ?? null);
+  const afterText = $derived.by(() => {
+    if (!after) return '';
+    const n = fight.objectives.filter(o => o.kind === after.kind && o.team === after.team).length;
+    return (n > 1 ? `${n} ` : '') + KIND[after.kind];
+  });
 </script>
 
-{#snippet half(p: PlayerLive, s: Stat, team: 'A' | 'B', side: 'l' | 'r')}
-  {@const involved = s.k + s.d + s.a > 0}
-  <div class="half {side}" class:out={!involved}>
-    <div class="champ" class:died={s.d > 0}>{#if p.champion}<img src={champIcon(v, p.champion)} alt="" />{/if}</div>
-    <div class="who"><div class="n">{p.name}</div><div class="k">{s.k} / {s.d} / {s.a}</div></div>
-    {#if s.mark}<span class="mk {team.toLowerCase()}">{s.mark}</span>{/if}
-    <div class="killed">{#each s.killed as c}<img src={champIcon(v, c)} alt="" />{/each}</div>
-  </div>
-{/snippet}
-
-<div class="recap" class:hidden={!shown}>
-  <div class="row">
-    <div class="col">{#each ingame.a.players as p, i (i)}{@render half(p, statsA[i], 'A', 'l')}{/each}</div>
-    <div class="mid">
-      <div class="head">Teamfight</div>
-      <div class="time">{fmtTime(fight.start)}–{fmtTime(fight.end)}</div>
-      <div class="score">
-        <span class="sn a" class:lose={fight.winner === 'B'}>{fight.killsA}</span>
-        <span class="dash">–</span>
-        <span class="sn b" class:lose={fight.winner === 'A'}>{fight.killsB}</span>
+<div class="recap">
+  <div class="inner" class:hidden={!shown}>
+    <div class="head">
+      <div class="col">
+        <div class="kick">TEAMFIGHT</div>
+        <div class="time">{fmtTime(fight.start)} – {fmtTime(fight.end)}</div>
       </div>
-      <div class="tags"><span>{tag('A')}</span><span>{tag('B')}</span></div>
-      {#if swing !== null && swingSide}
-        <div class="gold {swingSide}">+{Math.abs(Math.round(swing)).toLocaleString('en-US')} · <b>{tag(swingSide === 'a' ? 'A' : 'B')}</b></div>
-      {/if}
-      {#if objs.length}
-        <div class="then">
-          {#each objs as o}<span class="obj {o.team.toLowerCase()}">→ {objLabel(o)}</span>{/each}
+      <div class="score">
+        <span style:color="var(--a)">{fight.killsA}</span><span class="colon">:</span><span style:color="var(--b)">{fight.killsB}</span>
+      </div>
+      <div class="col right">
+        <div class="kick dimmed">GOLD-SWING · DANACH</div>
+        <div class="time">
+          <span style:color={swingTeam ? col(swingTeam) : 'var(--muted)'}>{swingText}{swingTeam ? ` ${tag(swingTeam)}` : ''}</span>{#if after} · <span style:color={col(after.team)}>{afterText}</span>{/if}
         </div>
-      {/if}
+      </div>
     </div>
-    <div class="col">{#each ingame.b.players as p, i (i)}{@render half(p, statsB[i], 'B', 'r')}{/each}</div>
+    <div class="tiles">
+      {#each kills as k, i (i)}
+        {@const b = badge(k)}
+        <div class="tile" style:border-top-color={col(k.killer.team)} style:--c={col(k.killer.team)}>
+          <div class="pair">
+            <img src={champIcon(v, k.killer.champ)} alt="" />
+            <i class="arrow"></i>
+            <img class="victim" src={champIcon(v, k.victim.champ)} alt="" />
+          </div>
+          <div class="foot"><span class="t">{fmtTime(k.t)}</span>{#if b}<span class="mk">{b}</span>{/if}</div>
+        </div>
+      {/each}
+      {#if more}<div class="tile more"><span>+{more}</span></div>{/if}
+    </div>
+    <div class="totals">
+      <div>{tag('A')} im Fight <b>{kdaA}</b></div>
+      <div><b>{kdaB}</b> {tag('B')} im Fight</div>
+    </div>
   </div>
 </div>
 
 <style>
-  .recap { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 1010px; box-sizing: border-box;
-           background: var(--cover); border: 1px solid var(--line); border-bottom: none;
-           border-radius: var(--radius) var(--radius) 0 0; padding: 9px 0;
-           transition: transform .3s cubic-bezier(.2,.8,.2,1), opacity .3s; }
-  .recap.hidden { transform: translate(-50%, 100%); opacity: 0; pointer-events: none; }
-  .row { display: grid; grid-template-columns: 1fr 190px 1fr; align-items: stretch; }
-  .col { display: flex; flex-direction: column; }
-  .half { display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 44px; position: relative; }
-  .half.r { flex-direction: row-reverse; }
-  .half::before { content: ""; position: absolute; top: 9px; bottom: 9px; width: 3px; border-radius: 2px; }
-  .half.l::before { left: 0; background: var(--a); } .half.r::before { right: 0; background: var(--b); }
-  .half.out { opacity: .35; }
-  .champ { width: 32px; height: 32px; flex: none; }
-  .champ img { width: 100%; height: 100%; border-radius: 6px; display: block; }
-  .champ.died img { filter: grayscale(1) brightness(.7); }
-  .who { width: 118px; flex: none; }
-  .r .who { text-align: right; }
-  .n { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .k { font-size: 12px; color: var(--muted); font-weight: 600; }
-  .mk { font-size: 10px; font-weight: 800; letter-spacing: 1px; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--c); color: var(--c); flex: none; }
-  .mk.a { --c: var(--a); } .mk.b { --c: var(--b); }
-  .killed { display: flex; gap: 3px; margin-left: auto; }
-  .r .killed { margin-left: 0; margin-right: auto; flex-direction: row-reverse; }
-  .killed img { width: 26px; height: 26px; border-radius: 4px; display: block; }
-  .mid { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-         background: var(--cover-2); border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
-  .head { font-size: 11px; font-weight: 800; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
-  .time { font-size: 12px; font-weight: 600; color: var(--dim); font-feature-settings: "tnum" 1; }
-  .score { display: flex; align-items: baseline; gap: 10px; margin-top: 4px; }
-  .sn { font-size: 46px; font-weight: 900; line-height: 1; font-feature-settings: "tnum" 1; }
-  .sn.a { color: var(--a); } .sn.b { color: var(--b); }
-  .sn.lose { opacity: .4; }
-  .dash { font-size: 24px; color: var(--dim); }
-  .tags { display: flex; justify-content: space-between; width: 120px; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; color: var(--dim); }
-  .gold { margin-top: 8px; font-size: 18px; font-weight: 800; }
-  .gold.a { color: var(--a); } .gold.b { color: var(--b); }
-  .gold b { font-size: 12px; letter-spacing: 1px; }
-  .then { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 8px; margin-top: 6px; font-size: 13px; font-weight: 700; }
-  .obj.a { color: var(--a); } .obj.b { color: var(--b); }
+  /* ingame bottom: sits over the scoreboard panel, content rises 120 ms after the scoreboard sinks */
+  .recap { position: absolute; left: 585px; top: 846px; width: 750px; height: 234px; overflow: hidden; pointer-events: none;
+           clip-path: polygon(18px 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%, 0 18px); }
+  .inner { position: absolute; left: 18px; right: 18px; top: 0; bottom: 0; display: flex; flex-direction: column; background: var(--cover);
+           transform: none; transition: transform .36s cubic-bezier(.2,.8,.2,1) .12s; }
+  .inner.hidden { transform: translateY(240px); transition-delay: 0s; }
+  .head { display: grid; grid-template-columns: 1fr 200px 1fr; align-items: center; height: 78px; }
+  .col { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .col.right { align-items: flex-end; }
+  .kick { font: 700 13px var(--font); letter-spacing: .22em; color: var(--accent); }
+  .kick.dimmed { color: var(--muted); }
+  .time { font: 800 24px var(--font-num); white-space: nowrap; }
+  .score { display: flex; align-items: center; justify-content: center; gap: 14px; font: 800 54px/1 var(--font-num); }
+  .colon { color: var(--muted); font-size: 36px; }
+  .tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+  .tile { display: flex; flex-direction: column; gap: 6px; padding: 8px; background: var(--bg); border-top: 4px solid var(--c); min-width: 0; }
+  .pair { display: flex; align-items: center; justify-content: space-between; }
+  .pair img { width: 44px; height: 44px; border-radius: 4px; display: block; }
+  .pair img.victim { filter: grayscale(1) brightness(.6); }
+  .arrow { width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-left: 10px solid var(--c); }
+  .foot { display: flex; align-items: center; justify-content: space-between; height: 18px; }
+  .t { font: 700 15px var(--font-num); color: var(--soft); }
+  .mk { font: 800 13px var(--font-num); letter-spacing: .06em; color: var(--c); }
+  .tile.more { align-items: center; justify-content: center; border-top-color: var(--muted); font: 800 32px var(--font-num); color: var(--muted); }
+  .totals { display: flex; justify-content: space-between; margin-top: 12px; font: 700 16px var(--font); letter-spacing: .08em; }
+  .totals b { font: 800 20px var(--font-num); }
 </style>

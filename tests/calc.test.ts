@@ -8,7 +8,7 @@ import type { ObjectiveRules } from '../server/config.ts';
 
 const rules: ObjectiveRules = {
   dragonFirst: 300, dragonRespawn: 300, elderRespawn: 360, grubsFirst: 480, heraldFirst: 960,
-  baronFirst: 1500, baronRespawn: 360, baronBuff: 180, elderBuff: 150, atakhanFirst: null, showBeforeSec: 240,
+  baronFirst: 1500, baronRespawn: 360, baronBuff: 180, elderBuff: 150, atakhanFirst: null, inhibRespawn: 300, showBeforeSec: 240,
 };
 
 describe('laneShares (scoreboard funnel)', () => {

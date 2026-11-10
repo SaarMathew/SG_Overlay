@@ -6,3 +6,9 @@ release/
 test-runs/
 build/
 screenshots/
+design-handoff/
+SG-Overlay-Design-Handoff.zip
+design-import/ref/
+design-import/impl/
+design-import/final/
+design-import/assets/

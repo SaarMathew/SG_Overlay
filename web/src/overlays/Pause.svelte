@@ -2,42 +2,42 @@
   import { connect } from '../lib/state.svelte.ts';
   import { orient } from '../lib/orient.ts';
   import Stage from '../lib/Stage.svelte';
-  import TeamLogo from '../lib/TeamLogo.svelte';
+  import SceneFrame from '../lib/SceneFrame.svelte';
+  import FsTeam from '../lib/FsTeam.svelte';
+  import { fmtTime } from '../../../shared/calc.ts';
 
-  const { state: raw } = connect(['match', 'series', 'ui']);
+  const { state: raw } = connect(['match', 'series', 'ui', 'ingame']);
   const app = $derived(orient(raw));
   const m = $derived(app.match);
   const s = $derived(app.series);
+  const clock = $derived(app.ingame ? fmtTime(app.ingame.gameTime) : null);
 </script>
 
 <Stage match={m}>
-  <div class="scene-bg"></div>
-  {#if m && s}
-    <div class="wrap">
-      <img class="brand" src="/assets/saargaming-logo.png" alt="SaarGaming" />
-      <div class="eyebrow">{m.leagueLine}</div>
-      <h1>{app.ui?.pauseText ?? 'Pause'}</h1>
-      <div class="sub">We'll be right back</div>
-      <div class="score">
-        <TeamLogo team={m.teamA} size={64} />
-        <span class="tag">{m.teamA.tag}</span>
-        <span class="n a">{s.scoreA}</span><span class="d">–</span><span class="n b">{s.scoreB}</span>
-        <span class="tag">{m.teamB.tag}</span>
-        <TeamLogo team={m.teamB} size={64} />
+  <SceneFrame kicker={m?.leagueLine ?? ''} badge={m && s ? `BO${m.format} · SPIEL ${s.gameNumber}` : ''}>
+    {#if m && s}
+      <div class="mid">
+        <div class="sc-kicker">Pause</div>
+        <div class="txt">{app.ui?.pauseText ?? 'Pause'}</div>
+        <div class="sub">Wir sind gleich zurück{clock ? ` · Spielzeit ${clock}` : ''}</div>
       </div>
-    </div>
-  {/if}
+      <div class="score">
+        <div class="t l"><FsTeam team={m.teamA} size={64} /><span>{m.teamA.tag}</span></div>
+        <div class="n">{s.scoreA} : {s.scoreB}</div>
+        <div class="t r"><FsTeam team={m.teamB} size={64} /><span>{m.teamB.tag}</span></div>
+      </div>
+    {/if}
+  </SceneFrame>
 </Stage>
 
 <style>
-  .wrap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .brand { width: 200px; height: 200px; object-fit: contain; margin-bottom: 18px; animation: rise .6s ease-out both; }
-  h1 { font-size: 84px; font-weight: 900; letter-spacing: -1.5px; margin-top: 8px; animation: rise .6s .1s ease-out both; }
-  .sub { font-size: 22px; color: var(--muted); margin-top: 6px; animation: rise .6s .2s ease-out both; }
-  .score { display: flex; align-items: center; gap: 18px; margin-top: 52px; padding: 18px 34px; background: var(--panel);
-           border: 1px solid var(--line); border-radius: 16px; animation: rise .6s .3s ease-out both; }
-  .tag { font-size: 28px; font-weight: 800; }
-  .n { font-size: 44px; font-weight: 900; }
-  .n.a { color: var(--a); } .n.b { color: var(--b); }
-  .d { font-size: 36px; color: var(--dim); }
+  .mid { position: absolute; left: 0; right: 0; top: 300px; display: flex; flex-direction: column; align-items: center; gap: 18px; animation: rise .6s ease-out both; }
+  .txt { font: 800 168px/0.95 var(--font-num); text-transform: uppercase; text-align: center; max-width: 1600px; text-wrap: balance; }
+  .sub { font: 600 26px var(--font); color: var(--scene-soft); }
+  .score { position: absolute; left: 560px; width: 800px; top: 860px; height: 96px; display: grid; grid-template-columns: 1fr 140px 1fr; background: var(--scene-panel);
+           clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%, 0 16px); animation: rise .6s .2s ease-out both; }
+  .t { display: flex; align-items: center; gap: 16px; font: 800 34px var(--font-num); }
+  .t.l { padding-left: 28px; border-left: 8px solid var(--a); }
+  .t.r { flex-direction: row-reverse; padding-right: 28px; border-right: 8px solid var(--b); }
+  .n { display: flex; align-items: center; justify-content: center; font: 800 44px var(--font-num); white-space: pre; }
 </style>

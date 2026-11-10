@@ -18,7 +18,7 @@ export const dragonLabel = (t: DragonType | undefined) => (t ? DRAGON_LABEL[t] :
  * Upcoming objectives and running buffs. `at` is the game time of the spawn (or buff end);
  * a timer with at <= gameTime means the objective is up. Only timers within `showBeforeSec` are returned.
  */
-export function computeTimers(kills: ObjectiveKill[], gameTime: number, r: ObjectiveRules): ObjectiveTimer[] {
+export function computeTimers(kills: ObjectiveKill[], gameTime: number, r: ObjectiveRules, soulType?: DragonType | null): ObjectiveTimer[] {
   const out: ObjectiveTimer[] = [];
   const last = (k: ObjectiveKill['kind']) => kills.filter(x => x.kind === k).at(-1);
   const count = (k: ObjectiveKill['kind'], team?: TeamKey) => kills.filter(x => x.kind === k && (!team || x.team === team)).length;
@@ -30,8 +30,9 @@ export function computeTimers(kills: ObjectiveKill[], gameTime: number, r: Objec
   if (soul) {
     out.push({ id: 'elder', label: 'Elder Dragon', kind: 'elder', at: (lastDrake?.t ?? gameTime) + r.elderRespawn });
   } else {
-    // From the third dragon on the rift element is fixed = type of the third dragon
-    const riftType = dragons.length >= 3 ? dragons[2].dragonType : undefined;
+    // From the third dragon on the rift element is fixed: the soul type (map terrain), else the third dragon's type.
+    // Before that the next element is unknown – no type, the overlay shows a neutral icon.
+    const riftType = dragons.length >= 2 ? (soulType ?? dragons[2]?.dragonType) : undefined;
     out.push({
       id: 'dragon', label: dragonLabel(riftType), kind: 'dragon', dragonType: riftType,
       at: lastDrake ? lastDrake.t + r.dragonRespawn : r.dragonFirst,

@@ -6,6 +6,7 @@ import type { ObsAdapter } from '../adapters/obs.ts';
 import type { Store } from '../state/store.ts';
 import type { GoldReading, SourceBus } from '../sources/raw.ts';
 import { emptyTemplates, learn, loadTemplates, parseCs, parseGold, recognize, toGray, type Gray, type Templates } from './matcher.ts';
+import { loadTopbarTemplates, readTopbar } from './topbar.ts';
 import { log } from '../log.ts';
 
 /** glyphs learned on this PC (added to the shipped defaults) */
@@ -24,6 +25,7 @@ const readTemplates = (file: string): Templates => {
 export class GoldOcr {
   templates: Templates = emptyTemplates();
   private learned: Templates = emptyTemplates();
+  private topbarTemplates: Templates = loadTopbarTemplates();
   private timer: NodeJS.Timeout | null = null;
   private busy = false;
   private lastFrame: { png: PNG; at: number } | null = null;
@@ -77,6 +79,7 @@ export class GoldOcr {
           ...ocr.chaos.map((r, i) => ({ name: `chaos${i}`, png: cropPng(frame, r) })),
           ...ocr.csOrder.map((r, i) => ({ name: `csorder${i}`, png: cropPng(frame, r) })),
           ...ocr.csChaos.map((r, i) => ({ name: `cschaos${i}`, png: cropPng(frame, r) })),
+          { name: 'topbar', png: cropPng(frame, { x: 470, y: 0, w: 980, h: 90 }) },
         ]);
       }
       if (!Object.keys(this.templates.chars).length) {
@@ -109,7 +112,8 @@ export class GoldOcr {
     const { ocr } = this.settings();
     const side = (regions: OcrRegion[]) => regions.map(r => parseGold(recognize(this.crop(png, r), ocr.threshold, this.templates)));
     const cs = (regions: OcrRegion[]) => regions.map(r => parseCs(recognize(this.crop(png, r), ocr.threshold, this.templates)));
-    return { order: side(ocr.order), chaos: side(ocr.chaos), cs: { order: cs(ocr.csOrder ?? []), chaos: cs(ocr.csChaos ?? []) } };
+    const topbar = ocr.topbar && Object.keys(this.topbarTemplates.chars).length ? readTopbar(png, ocr.topbar, this.topbarTemplates) : undefined;
+    return { order: side(ocr.order), chaos: side(ocr.chaos), cs: { order: cs(ocr.csOrder ?? []), chaos: cs(ocr.csChaos ?? []) }, topbar };
   }
 
   /** Current crops with recognized text, for the calibration view in the admin panel. */

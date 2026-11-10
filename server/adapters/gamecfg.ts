@@ -14,12 +14,15 @@ export function replayApiConfig(leagueDir: string): 'enabled' | 'disabled' | 'mi
 /** Sets EnableReplayApi=1 in the [General] section; keeps a backup next to the file. */
 export function enableReplayApi(leagueDir: string): void {
   const file = path.join(leagueDir, 'Config', 'game.cfg');
-  const cfg = fs.readFileSync(file, 'utf8');
+  // also repairs files broken by an older version that glued the line to "[General]\r"
+  const cfg = fs.readFileSync(file, 'utf8').replace(/\[General\]\r(?!\n)/, '[General]\r\n');
   fs.writeFileSync(file + '.sg-backup', cfg);
   const eol = cfg.includes('\r\n') ? '\r\n' : '\n';
   let out: string;
-  if (/^\s*EnableReplayApi\s*=.*$/m.test(cfg)) out = cfg.replace(/^\s*EnableReplayApi\s*=.*$/m, 'EnableReplayApi=1');
-  else if (/^\[General\]\s*$/m.test(cfg)) out = cfg.replace(/^\[General\]\s*$/m, m => `${m}${eol}EnableReplayApi=1`);
+  // [ \t] instead of \s: \s would also swallow the line break (game.cfg uses CRLF, and ^/$ match at a lone \r)
+  const line = /^[ \t]*EnableReplayApi[ \t]*=[^\r\n]*/m;
+  if (line.test(cfg)) out = cfg.replace(line, 'EnableReplayApi=1');
+  else if (/^\[General\][ \t]*\r?$/m.test(cfg)) out = cfg.replace(/^\[General\][ \t]*(?=\r?\n)/m, m => `${m}${eol}EnableReplayApi=1`);
   else out = `[General]${eol}EnableReplayApi=1${eol}${cfg}`;
   fs.writeFileSync(file, out);
 }

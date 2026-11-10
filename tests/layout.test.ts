@@ -45,7 +45,7 @@ describe('orient', () => {
       ...d, connected: true, error: '',
       match: { ...d.match, teamA: { ...d.match.teamA, tag: 'A' }, teamB: { ...d.match.teamB, tag: 'B' } },
       series: { ...d.series, scoreA: 2, scoreB: 1, games: [{ number: 1, winner: 'A' as const, durationSec: 1, champsA: ['x'], champsB: ['y'] }, { number: 2, winner: null, durationSec: 1, champsA: [], champsB: [] }] },
-      ingame: { ...d.ingame, goldHistory: [{ t: 60, diff: 500 }], timers: [{ id: '1', label: '', kind: 'baron' as const, team: 'A' as const, at: 1 }] },
+      ingame: { ...d.ingame, goldHistory: [{ t: 60, diff: 500 }], timers: [{ id: '1', label: '', kind: 'baron' as const, team: 'A' as const, at: 1 }], inhibTimers: [{ team: 'A' as const, lane: 'Mid', at: 9 }, { team: 'B' as const, lane: 'Top', at: 9 }] },
       postgame: { ...d.postgame, winner: 'B' as const, winnerGuess: null, gold15: { a: [1], b: [2] } },
     };
   };
@@ -77,6 +77,7 @@ describe('orient', () => {
     expect(o.ingame.a.side).toBe('CHAOS');
     expect(o.ingame.goldHistory[0].diff).toBe(-500);
     expect(o.ingame.timers[0].team).toBe('B');
+    expect(o.ingame.inhibTimers.map(i => i.team)).toEqual(['B', 'A']);
     expect(o.postgame.winner).toBe('A');
     expect(o.postgame.winnerGuess).toBeNull();
     expect(o.postgame.gold15).toEqual({ a: [2], b: [1] });

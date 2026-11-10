@@ -69,6 +69,8 @@ export class ObsAdapter {
         }
       }
       this.setHealth('down');
+      // e.g. 207 "OBS is not ready" right after OBS starts: drop the half-open connection so the next tick retries
+      if (this.connected) { this.connected = false; await this.obs.disconnect().catch(() => {}); }
     } finally {
       this.connecting = false;
     }

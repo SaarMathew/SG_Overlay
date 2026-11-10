@@ -139,12 +139,11 @@ export class MockSource {
     for (const [t, sgWins] of [[420, true], [428, true], [436, false], [441, true], [452, true], [1685, true], [1690, false], [1694, true], [1698, true], [1701, true]] as const) {
       add(t, { EventName: 'ChampionKill', KillerName: killer(sgWins) });
     }
-    const drakes: [number, string, boolean][] = [[330, 'Earth', false], [650, 'Fire', true], [960, 'Water', true], [1270, 'Fire', true], [1580, 'Fire', true]];
+    const drakes: [number, string, boolean][] = [[330, 'Earth', false], [650, 'Fire', true], [960, 'Water', true], [1270, 'Water', true], [1580, 'Water', true]];
     for (const [t, type, sgWins] of drakes) add(t, { EventName: 'DragonKill', DragonType: type, Stolen: 'False', KillerName: killer(sgWins) });
     for (const t of [500, 520, 545]) add(t, { EventName: 'HordeKill', KillerName: 'sg' });
     for (const t of [700, 715, 730]) add(t, { EventName: 'HordeKill', KillerName: 'opp' });
     add(1000, { EventName: 'HeraldKill', KillerName: 'sg' });
-    add(1230, { EventName: 'AtakhanKill', KillerName: 'opp' });
     add(1520, { EventName: 'BaronKill', Stolen: 'False', KillerName: 'sg' });
     // towers: SG destroys ORDER (T1) structures
     const sgTowers = [[620, 'Turret_T1_R_03_A'], [900, 'Turret_T1_C_05_A'], [1100, 'Turret_T1_L_03_A'], [1300, 'Turret_T1_R_02_A'], [1560, 'Turret_T1_C_04_A'],
@@ -216,7 +215,7 @@ export class MockSource {
     return {
       allPlayers: [...opp.map((p, i) => player(p, i + 5, 'ORDER')), ...sg.map((p, i) => player(p, i, 'CHAOS'))],
       events: { Events: events },
-      gameData: { gameTime: gt, gameMode: 'CLASSIC' },
+      gameData: { gameTime: gt, gameMode: 'CLASSIC', mapTerrain: gt >= 650 ? 'Ocean' : 'Default' },   // rift changes after the 2nd dragon
     };
   }
 
