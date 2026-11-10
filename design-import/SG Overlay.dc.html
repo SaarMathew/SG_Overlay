@@ -249,6 +249,7 @@
 </sc-if>
 
 <sc-if value="{{ isIngame }}" hint-placeholder-val="{{ true }}">
+  <div style="position:absolute;left:372px;top:0;width:1176px;height:67px;background:linear-gradient(90deg,{{ L.color }},rgba(255,255,255,.2) 22%,rgba(255,255,255,.2) 78%,{{ R.color }});clip-path:polygon(0 0,100% 0,calc(100% - 23px) 100%,23px 100%);"></div>
   <div style="position:absolute;left:375px;top:0;width:1170px;height:64px;display:grid;grid-template-columns:minmax(0,1fr) 132px minmax(0,1fr);background:#120b20;clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,22px 100%);">
     <div style="position:relative;display:flex;align-items:center;gap:18px;padding-left:40px;">
       <div style="position:absolute;left:0;right:0;top:0;height:4px;background:{{ L.color }};"></div>
@@ -281,6 +282,8 @@
       <div style="width:76px;height:64px;display:grid;place-items:center;background:{{ R.color }};font:800 44px 'Barlow Condensed';color:#fff;">{{ R.kills }}</div>
     </div>
   </div>
+  <div style="position:absolute;left:587px;top:64px;width:746px;height:41px;background:rgba(255,255,255,.16);clip-path:polygon(0 0,100% 0,calc(100% - 17px) 100%,17px 100%);"></div>
+  <div style="position:absolute;left:640px;top:64px;width:640px;height:1px;background:rgba(255,255,255,.08);"></div>
   <div style="position:absolute;left:590px;top:64px;width:740px;height:38px;display:grid;grid-template-columns:minmax(0,1fr) 132px minmax(0,1fr);background:rgba(18,11,32,.94);clip-path:polygon(0 0,100% 0,calc(100% - 16px) 100%,16px 100%);">
     <div style="display:flex;align-items:center;gap:12px;padding-left:28px;">
       <div style="display:flex;gap:6px;"><sc-for list="{{ L.drakes }}" as="d" hint-placeholder-count="2"><div style="width:16px;height:16px;background:{{ d }};clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);"></div></sc-for></div>
@@ -344,13 +347,18 @@
     </div>
   </div>
 
-  <div style="position:absolute;left:585px;top:846px;width:750px;height:234px;overflow:hidden;background:#120b20;clip-path:polygon(18px 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%,0 18px);">
-    <div style="position:absolute;left:18px;right:18px;top:10px;display:flex;flex-direction:column;gap:3px;transform:{{ sbY }};transition:transform .36s cubic-bezier(.5,0,.2,1);">
+  <div style="position:absolute;left:497px;top:813px;width:926px;height:267px;background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.07));clip-path:polygon(19px 0,calc(100% - 19px) 0,100% 19px,100% 100%,0 100%,0 19px);"></div>
+  <div style="position:absolute;left:518px;top:813px;width:180px;height:3px;background:{{ L.color }};"></div>
+  <div style="position:absolute;left:1222px;top:813px;width:180px;height:3px;background:{{ R.color }};"></div>
+  <div style="position:absolute;left:500px;top:816px;width:920px;height:264px;overflow:hidden;background:#120b20;clip-path:polygon(18px 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%,0 18px);">
+    <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;margin-left:-60px;background:rgba(255,255,255,.06);"></div>
+    <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;margin-left:59px;background:rgba(255,255,255,.06);"></div>
+    <div style="position:absolute;left:22px;right:22px;top:10px;display:flex;flex-direction:column;gap:4px;transform:{{ sbY }};transition:transform .36s cubic-bezier(.5,0,.2,1);">
       <sc-for list="{{ lanes }}" as="ln" hint-placeholder-count="5">
-        <div style="display:grid;grid-template-columns:minmax(0,1fr) 96px minmax(0,1fr);height:41px;">
-          <div style="display:grid;grid-template-columns:40px minmax(0,1fr) 34px 148px;gap:8px;align-items:center;">
-            <div style="position:relative;width:40px;height:40px;">
-              <img src="{{ ln.lp.img }}" style="width:40px;height:40px;display:block;border-radius:4px;filter:{{ ln.lp.filter }};">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 120px minmax(0,1fr);height:46px;border-bottom:1px solid rgba(255,255,255,.05);">
+          <div style="display:grid;grid-template-columns:44px minmax(0,1fr) 40px 160px;gap:12px;align-items:center;">
+            <div style="position:relative;width:44px;height:44px;">
+              <img src="{{ ln.lp.img }}" style="width:44px;height:44px;display:block;border-radius:4px;filter:{{ ln.lp.filter }};">
               <div style="position:absolute;right:-4px;bottom:-3px;min-width:18px;height:16px;padding:0 2px;background:#0b0714;display:grid;place-items:center;font:700 13px 'Barlow Condensed';">{{ ln.lp.lvl }}</div>
               <sc-if value="{{ ln.lp.dead }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;display:grid;place-items:center;font:800 22px 'Barlow Condensed';background:rgba(11,7,20,.55);">{{ ln.lp.respawn }}</div></sc-if>
             </div>
@@ -359,22 +367,22 @@
               <div style="font:800 19px/1.05 'Barlow Condensed';">{{ ln.lp.kda }}</div>
             </div>
             <div style="text-align:right;font:700 17px 'Barlow Condensed';color:#d8cfe8;">{{ ln.lp.cs }}</div>
-            <div style="display:flex;gap:1px;"><sc-for list="{{ ln.lp.items }}" as="it" hint-placeholder-count="7"><div style="width:20px;height:20px;background:#0b0714;border-radius:{{ it.radius }};overflow:hidden;margin-left:{{ it.ml }};"><sc-if value="{{ it.has }}" hint-placeholder-val="{{ true }}"><img src="{{ it.src }}" style="width:20px;height:20px;display:block;"></sc-if></div></sc-for></div>
+            <div style="display:flex;gap:1px;"><sc-for list="{{ ln.lp.items }}" as="it" hint-placeholder-count="7"><div style="width:21px;height:21px;background:#0b0714;border-radius:{{ it.radius }};overflow:hidden;margin-left:{{ it.ml }};"><sc-if value="{{ it.has }}" hint-placeholder-val="{{ true }}"><img src="{{ it.src }}" style="width:21px;height:21px;display:block;"></sc-if></div></sc-for></div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#0b0714;margin:0 6px;">
             <div style="font:800 16px/1 'Barlow Condensed';color:{{ ln.color }};">{{ ln.diffText }}</div>
             <div style="display:flex;width:60px;height:4px;"><div style="width:{{ ln.pct }};background:{{ L.color }};"></div><div style="flex:1;background:{{ R.color }};"></div></div>
             <div style="font:700 10px 'Barlow';letter-spacing:.18em;color:#b8acd0;">{{ ln.role }}</div>
           </div>
-          <div style="display:grid;grid-template-columns:148px 34px minmax(0,1fr) 40px;gap:8px;align-items:center;">
-            <div style="display:flex;flex-direction:row-reverse;gap:1px;"><sc-for list="{{ ln.rp.items }}" as="it" hint-placeholder-count="7"><div style="width:20px;height:20px;background:#0b0714;border-radius:{{ it.radius }};overflow:hidden;margin-right:{{ it.ml }};"><sc-if value="{{ it.has }}" hint-placeholder-val="{{ true }}"><img src="{{ it.src }}" style="width:20px;height:20px;display:block;"></sc-if></div></sc-for></div>
+          <div style="display:grid;grid-template-columns:160px 40px minmax(0,1fr) 44px;gap:12px;align-items:center;">
+            <div style="display:flex;flex-direction:row-reverse;gap:1px;"><sc-for list="{{ ln.rp.items }}" as="it" hint-placeholder-count="7"><div style="width:21px;height:21px;background:#0b0714;border-radius:{{ it.radius }};overflow:hidden;margin-right:{{ it.ml }};"><sc-if value="{{ it.has }}" hint-placeholder-val="{{ true }}"><img src="{{ it.src }}" style="width:21px;height:21px;display:block;"></sc-if></div></sc-for></div>
             <div style="font:700 17px 'Barlow Condensed';color:#d8cfe8;">{{ ln.rp.cs }}</div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;min-width:0;">
               <div style="font:600 13px/1.1 'Barlow';color:#c9bedc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">{{ ln.rp.name }}</div>
               <div style="font:800 19px/1.05 'Barlow Condensed';">{{ ln.rp.kda }}</div>
             </div>
-            <div style="position:relative;width:40px;height:40px;">
-              <img src="{{ ln.rp.img }}" style="width:40px;height:40px;display:block;border-radius:4px;filter:{{ ln.rp.filter }};">
+            <div style="position:relative;width:44px;height:44px;">
+              <img src="{{ ln.rp.img }}" style="width:44px;height:44px;display:block;border-radius:4px;filter:{{ ln.rp.filter }};">
               <div style="position:absolute;left:-4px;bottom:-3px;min-width:18px;height:16px;padding:0 2px;background:#0b0714;display:grid;place-items:center;font:700 13px 'Barlow Condensed';">{{ ln.rp.lvl }}</div>
               <sc-if value="{{ ln.rp.dead }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;display:grid;place-items:center;font:800 22px 'Barlow Condensed';background:rgba(11,7,20,.55);">{{ ln.rp.respawn }}</div></sc-if>
             </div>
@@ -383,7 +391,7 @@
       </sc-for>
     </div>
 
-    <div style="position:absolute;left:18px;right:18px;top:0;bottom:0;display:flex;flex-direction:column;transform:{{ fightY }};transition:transform .36s cubic-bezier(.2,.8,.2,1) .12s;">
+    <div style="position:absolute;left:26px;right:26px;top:14px;bottom:0;display:flex;flex-direction:column;transform:{{ fightY }};transition:transform .36s cubic-bezier(.2,.8,.2,1) .12s;">
       <div style="display:grid;grid-template-columns:1fr 200px 1fr;align-items:center;height:78px;">
         <div style="display:flex;flex-direction:column;gap:2px;">
           <div style="font:700 13px 'Barlow';letter-spacing:.22em;color:#e8429a;">TEAMFIGHT</div>
@@ -419,7 +427,7 @@
 
 <sc-if value="{{ showZones }}" hint-placeholder-val="{{ false }}">
   <div style="position:absolute;left:395px;top:0;width:1145px;height:60px;border:2px dashed #ff5ca8;box-sizing:border-box;pointer-events:none;"></div>
-  <div style="position:absolute;left:600px;top:850px;width:730px;height:230px;border:2px dashed #ff5ca8;box-sizing:border-box;pointer-events:none;"></div>
+  <div style="position:absolute;left:515px;top:825px;width:890px;height:255px;border:2px dashed #ff5ca8;box-sizing:border-box;pointer-events:none;"></div>
   <div style="position:absolute;left:0;top:135px;width:80px;height:505px;border:2px dashed #5ee08a;box-sizing:border-box;pointer-events:none;"></div>
   <div style="position:absolute;left:1840px;top:135px;width:80px;height:505px;border:2px dashed #5ee08a;box-sizing:border-box;pointer-events:none;"></div>
   <div style="position:absolute;left:1640px;top:800px;width:280px;height:280px;border:2px dashed #5ee08a;box-sizing:border-box;display:grid;place-items:center;font:500 16px 'JetBrains Mono',monospace;color:#5ee08a;pointer-events:none;">MINIMAP · FREI</div>
@@ -534,7 +542,7 @@ class Component extends DCLogic {
       showGameLayer: ing && (P.showGame ?? true), showZones: ing && !!P.showZones,
       diffText: '+' + (Math.abs(diff) / 1000).toFixed(1) + 'k', diffColor: diff >= 0 ? L.color : R.color, diffLeft: diff >= 0, diffRight: diff < 0,
       popClip: popOn ? 'polygon(0 0,100% 0,100% 100%,0 100%)' : 'polygon(50% 0,50% 0,50% 100%,50% 100%)', popOpacity: popOn ? 1 : 0,
-      sbY: fightOn ? 'translateY(240px)' : 'translateY(0px)', fightY: fightOn ? 'translateY(0px)' : 'translateY(240px)',
+      sbY: fightOn ? 'translateY(280px)' : 'translateY(0px)', fightY: fightOn ? 'translateY(0px)' : 'translateY(280px)',
       h2hX: scene === 'h2h' ? 'translateX(0px)' : 'translateX(-600px)', h2hO: scene === 'h2h' ? 1 : 0,
     };
   }

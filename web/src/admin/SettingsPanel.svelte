@@ -35,7 +35,7 @@
     'h2h:BOT': 'Head to head · Bot', 'h2h:SUP': 'Head to head · Support', 'h2h:off': 'Hide head to head',
     'postgame:page': 'Post-game page', 'scenes:auto': 'Automatic switching on/off', 'scene:pause': 'Pause scene',
     'replay:back10': 'Playback · 10 s back', 'replay:fwd10': 'Playback · 10 s forward', 'replay:pause': 'Playback · pause / play',
-    'replay:live': 'Playback · back to live', 'replay:bar': 'Show / hide Riot replay bar', 'fight:show': 'Show fight recap',
+    'replay:live': 'Playback · back to live', 'replay:bar': 'Show / hide Riot replay bar', 'fight:show': 'Show / hide fight recap', 'sides:swap': 'Swap sides (SG left ↔ right)',
   };
 </script>
 

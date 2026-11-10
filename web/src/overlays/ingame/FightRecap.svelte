@@ -76,11 +76,11 @@
 
 <style>
   /* ingame bottom: sits over the scoreboard panel, content rises 120 ms after the scoreboard sinks */
-  .recap { position: absolute; left: 585px; top: 846px; width: 750px; height: 234px; overflow: hidden; pointer-events: none;
+  .recap { position: absolute; left: 500px; top: 816px; width: 920px; height: 264px; overflow: hidden; pointer-events: none;
            clip-path: polygon(18px 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%, 0 18px); }
-  .inner { position: absolute; left: 18px; right: 18px; top: 0; bottom: 0; display: flex; flex-direction: column; background: var(--cover);
+  .inner { position: absolute; left: 26px; right: 26px; top: 14px; bottom: 0; display: flex; flex-direction: column; background: var(--cover);
            transform: none; transition: transform .36s cubic-bezier(.2,.8,.2,1) .12s; }
-  .inner.hidden { transform: translateY(240px); transition-delay: 0s; }
+  .inner.hidden { transform: translateY(280px); transition-delay: 0s; }
   .head { display: grid; grid-template-columns: 1fr 200px 1fr; align-items: center; height: 78px; }
   .col { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .col.right { align-items: flex-end; }

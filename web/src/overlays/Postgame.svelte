@@ -123,9 +123,15 @@
               </div>
               {#each bars.evs as e, k}
                 {@const same = bars.evs.filter((o, j) => j < k && o.team === e.team && o.i === e.i).length}
-                <img class="mk" src="/assets/objectives/{e.kind === 'dragon' ? (e.dragonType ?? 'elder') : e.kind === 'elder' ? 'elder' : 'baron'}.png" alt=""
-                  style:left="{((e.i + 0.5) / Math.max(1, bars.n)) * 100}%"
-                  style:top="{e.team === 'A' ? same * 22 : 196 - same * 22}px" />
+                {#if e.kind === 'dragon' && !e.dragonType}
+                  <!-- dragon of unknown element: neutral marker, never the Elder icon -->
+                  <i class="mk drake" style:left="{((e.i + 0.5) / Math.max(1, bars.n)) * 100}%"
+                    style:top="{e.team === 'A' ? same * 22 : 196 - same * 22}px"></i>
+                {:else}
+                  <img class="mk" src="/assets/objectives/{e.kind === 'dragon' ? e.dragonType : e.kind === 'elder' ? 'elder' : 'baron'}.png" alt=""
+                    style:left="{((e.i + 0.5) / Math.max(1, bars.n)) * 100}%"
+                    style:top="{e.team === 'A' ? same * 22 : 196 - same * 22}px" />
+                {/if}
               {/each}
             </div>
           </div>
@@ -224,6 +230,7 @@
   .bb { position: absolute; left: 0; right: 0; }
   .bl { position: absolute; left: 0; bottom: -4px; font: 600 13px var(--font-num); color: var(--muted); }
   .mk { position: absolute; width: 22px; height: 22px; margin-left: -11px; object-fit: contain; }
+  .mk.drake { width: 14px; height: 14px; margin: 4px 0 0 -7px; background: var(--soft); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 
   .lanes { position: absolute; left: 64px; right: 64px; top: 216px; display: flex; flex-direction: column; gap: 14px; }
   .lane { display: grid; grid-template-columns: minmax(0,1fr) 300px minmax(0,1fr); height: 150px; background: var(--panel); }

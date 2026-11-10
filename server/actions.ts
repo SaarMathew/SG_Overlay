@@ -56,6 +56,17 @@ export const ACTIONS: Record<string, Handler> = {
 
   'match:swapRosters': ({ store }) => store.update('match', m => { [m.rosterA, m.rosterB] = [m.rosterB, m.rosterA]; }),
 
+  /**
+   * Emergency fix when the side detection is wrong: team A moves to the other game side. Overlays swap left/right
+   * and the game data follows (the pipeline re-evaluates the side every poll). `auto` returns to detection.
+   */
+  'match:swapSides': ({ store }, p?: { auto?: boolean }) => store.update('match', m => {
+    m.layout = 'auto';
+    if (p?.auto) { m.sideA = 'auto'; return; }
+    const now = store.get('ui').aRight ? 'CHAOS' : 'ORDER';
+    m.sideA = now === 'CHAOS' ? 'ORDER' : 'CHAOS';
+  }),
+
   'series:update': ({ store }, p: Partial<SeriesState>) => store.update('series', s => { Object.assign(s, p); }),
 
   'series:reset': ({ store }) => store.set('series', defaultSeries()),
@@ -159,9 +170,15 @@ export function runAction(ctx: ActionContext, name: string, payload?: unknown): 
 export function hotkeyAction(ctx: ActionContext, binding: string): void {
   const [kind, arg] = binding.split(':');
   if (kind === 'h2h') runAction(ctx, 'ui:h2h', { lane: (ROLES as readonly string[]).includes(arg) ? arg : null });
-  else if (kind === 'fight') void Promise.resolve().then(() => runAction(ctx, arg === 'hide' ? 'fight:hide' : 'fight:show')).catch(() => { /* no fight yet */ });
+  else if (kind === 'fight') {
+    // the show hotkey toggles: pressed again while the recap is on air it hides it
+    const recap = ctx.store.get('ui').fightRecap;
+    const hide = arg === 'hide' || (recap !== null && recap.until > Date.now());
+    void Promise.resolve().then(() => runAction(ctx, hide ? 'fight:hide' : 'fight:show')).catch(() => { /* no fight yet */ });
+  }
   else if (binding === 'postgame:page') runAction(ctx, 'ui:postgamePage');
   else if (binding === 'scenes:auto') runAction(ctx, 'ui:autoScenes');
+  else if (binding === 'sides:swap') runAction(ctx, 'match:swapSides');
   else if (kind === 'scene') runAction(ctx, 'ui:scene', { scene: arg });
   else if (kind === 'replay') {
     const run = (name: string, payload?: unknown) => Promise.resolve(runAction(ctx, name, payload)).catch(() => { /* no game */ });

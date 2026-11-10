@@ -40,6 +40,7 @@
 
 <!-- Must fully cover Riot's score bar (x 395–1540, y 0–95): opaque -->
 <div class="topbar">
+  <div class="edge"></div>
   <div class="bar">
     {@render side(ingame.a, match.teamA, series.scoreA, 'l')}
     <div class="center">
@@ -48,6 +49,8 @@
     </div>
     {@render side(ingame.b, match.teamB, series.scoreB, 'r')}
   </div>
+  <div class="subback"></div>
+  <div class="hair"></div>
   <div class="sub">
     {@render objs(ingame.a, 'l')}
     <div class="diff" class:a={diff > 0} class:b={diff < 0}>
@@ -62,7 +65,13 @@
 
 <style>
   .topbar { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 1170px; }
-  .bar { display: grid; grid-template-columns: minmax(0, 1fr) 132px minmax(0, 1fr); height: 64px; background: var(--panel);
+  .edge { position: absolute; left: -3px; top: 0; width: 1176px; height: 67px;
+          background: linear-gradient(90deg, var(--a), rgba(255,255,255,.2) 22%, rgba(255,255,255,.2) 78%, var(--b));
+          clip-path: polygon(0 0, 100% 0, calc(100% - 23px) 100%, 23px 100%); }
+  .subback { position: absolute; left: 212px; top: 64px; width: 746px; height: 41px; background: rgba(255,255,255,.16);
+             clip-path: polygon(0 0, 100% 0, calc(100% - 17px) 100%, 17px 100%); }
+  .hair { position: absolute; left: 265px; top: 64px; width: 640px; height: 1px; background: rgba(255,255,255,.08); }
+  .bar { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 132px minmax(0, 1fr); height: 64px; background: var(--panel);
          clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 22px 100%); }
   .side { position: relative; display: flex; align-items: center; gap: 18px; }
   .side.l { padding-left: 40px; }
@@ -85,7 +94,7 @@
   .clock.paused { color: var(--muted); }
   .game { font: 700 13px var(--font); letter-spacing: .1em; color: var(--muted); white-space: nowrap; }
 
-  .sub { position: relative; width: 740px; height: 38px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) 132px minmax(0, 1fr);
+  .sub { position: relative; z-index: 1; width: 740px; height: 38px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) 132px minmax(0, 1fr);
          background: rgba(18, 11, 32, .94); clip-path: polygon(0 0, 100% 0, calc(100% - 16px) 100%, 16px 100%); }
   .objs { display: flex; align-items: center; gap: 12px; padding-left: 28px; }
   .objs.r { flex-direction: row-reverse; padding-left: 0; padding-right: 28px; }

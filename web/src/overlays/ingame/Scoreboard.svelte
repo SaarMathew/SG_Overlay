@@ -30,8 +30,11 @@
   </div>
 {/snippet}
 
-<!-- Must fully cover the Riot spectator scoreboard (x 600-1330, y 845-1080): opaque, 750 x 234 -->
+<!-- Must fully cover the Riot spectator scoreboard (x 600-1330, y 845-1080): opaque, 920 x 264 -->
+<div class="frame"></div>
+<div class="acc l"></div><div class="acc r"></div>
 <div class="scoreboard">
+  <div class="div l"></div><div class="div r"></div>
   <div class="rows" class:away>
     {#each ROLES as role, i (role)}
       {@const sh = shares[i]}
@@ -49,20 +52,25 @@
 </div>
 
 <style>
-  
-  .scoreboard { position: absolute; left: 585px; top: 846px; width: 750px; height: 234px; overflow: hidden; background: var(--cover);
+  .frame { position: absolute; left: 497px; top: 813px; width: 926px; height: 267px; background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.07));
+           clip-path: polygon(19px 0, calc(100% - 19px) 0, 100% 19px, 100% 100%, 0 100%, 0 19px); }
+  .acc { position: absolute; top: 813px; width: 180px; height: 3px; }
+  .acc.l { left: 518px; background: var(--a); } .acc.r { left: 1222px; background: var(--b); }
+  .div { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,.06); }
+  .div.l { margin-left: -60px; } .div.r { margin-left: 59px; }
+  .scoreboard { position: absolute; left: 500px; top: 816px; width: 920px; height: 264px; overflow: hidden; background: var(--cover);
                 clip-path: polygon(18px 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%, 0 18px); }
-  .rows { position: absolute; left: 18px; right: 18px; top: 10px; display: flex; flex-direction: column; gap: 3px;
+  .rows { position: absolute; left: 22px; right: 22px; top: 10px; display: flex; flex-direction: column; gap: 4px;
           transition: transform .36s cubic-bezier(.5, 0, .2, 1); }
-  .rows.away { transform: translateY(240px); }
-  .row { display: grid; grid-template-columns: minmax(0, 1fr) 96px minmax(0, 1fr); height: 41px; }
+  .rows.away { transform: translateY(280px); }
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) 120px minmax(0, 1fr); height: 46px; border-bottom: 1px solid rgba(255,255,255,.05); }
   .row.focus .mid { outline: 2px solid var(--accent); outline-offset: -2px; }
-  .half { display: grid; gap: 8px; align-items: center; }
-  .half.l { grid-template-columns: 40px minmax(0, 1fr) 34px 148px; }
-  .half.r { grid-template-columns: 148px 34px minmax(0, 1fr) 40px; }
+  .half { display: grid; gap: 12px; align-items: center; }
+  .half.l { grid-template-columns: 44px minmax(0, 1fr) 40px 160px; }
+  .half.r { grid-template-columns: 160px 40px minmax(0, 1fr) 44px; }
   .half.r .champ { order: 4; } .half.r .who { order: 3; } .half.r .cs { order: 2; } .half.r .items { order: 1; }
-  .champ { position: relative; width: 40px; height: 40px; }
-  .champ img { width: 40px; height: 40px; display: block; border-radius: 4px; }
+  .champ { position: relative; width: 44px; height: 44px; }
+  .champ img { width: 44px; height: 44px; display: block; border-radius: 4px; }
   .champ.dead img { filter: grayscale(1) brightness(.6); }
   .lv { position: absolute; bottom: -3px; right: -4px; min-width: 18px; height: 16px; padding: 0 2px; background: var(--bg);
         display: grid; place-items: center; font: 700 13px var(--font-num); }
@@ -76,8 +84,8 @@
   .r .cs { text-align: left; }
   .items { display: flex; gap: 1px; }
   .r .items { flex-direction: row-reverse; }
-  .slot { width: 20px; height: 20px; background: var(--bg); overflow: hidden; flex: none; }
-  .slot img { width: 20px; height: 20px; display: block; }
+  .slot { width: 21px; height: 21px; background: var(--bg); overflow: hidden; flex: none; }
+  .slot img { width: 21px; height: 21px; display: block; }
   .slot.trinket { border-radius: 50%; margin-left: 2px; }
   .r .slot.trinket { margin-left: 0; margin-right: 2px; }
   .mid { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: var(--bg); margin: 0 6px; }

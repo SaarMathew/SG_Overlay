@@ -72,6 +72,16 @@
     </section>
 
     <section class="card">
+      <div class="card-title">Sides <span class="hint">{m?.sideA === 'auto' ? 'detected automatically' : 'set by hand'}</span></div>
+      <div class="row">
+        <span>{m?.teamA.tag ?? 'A'} is shown <b>{ui?.aRight ? 'right (red side)' : 'left (blue side)'}</b></span>
+        <button class="primary" onclick={() => action('match:swapSides')}>Swap sides</button>
+        {#if m?.sideA !== 'auto'}<button onclick={() => action('match:swapSides', { auto: true })}>Back to automatic</button>{/if}
+        {@render hk('sides:swap')}
+      </div>
+    </section>
+
+    <section class="card">
       <div class="card-title">Head to head <span class="hint">{g?.active ? 'press again to hide' : 'available during the game'}</span></div>
       <div class="lanes">
         {#each ROLES as r, i (r)}
@@ -156,7 +166,7 @@
           <div class="objrow">
             <b>{teamName(k)}</b>
             {#each DRAGONS as [raw, label]}<button disabled={!g?.active} onclick={() => action('game:objective', { team: k, kind: 'dragon', dragon: raw })}><img src="/assets/objectives/{label.toLowerCase()}.png" alt="" />{label}</button>{/each}
-            {#each OBJECTIVES as [kind, label]}<button disabled={!g?.active} onclick={() => action('game:objective', { team: k, kind })}><img src="/assets/objectives/{kind}.png" alt="" />{label}</button>{/each}
+            {#each OBJECTIVES as [kind, label]}<button disabled={!g?.active} onclick={() => action('game:objective', { team: k, kind })}><img src="/assets/objectives/{kind === 'grubs' ? 'grub' : kind}.png" alt="" />{label}</button>{/each}
           </div>
         {/each}
       </section>

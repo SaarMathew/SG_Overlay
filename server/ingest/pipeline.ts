@@ -150,7 +150,9 @@ export class Pipeline {
       this.quiet = quiet;
       try {
         for (let i = c.dragons.length + c.elders; i < this.topbar.get(side, 'dragons'); i++) {
-          const type = this.topbar.typesOf(side)[i] ?? null;
+          // icon not recognised: from the third dragon of the game on, every elemental dragon is the soul element
+          const dragonsSoFar = this.kills.filter(k => k.kind === 'dragon').length;
+          const type = this.topbar.typesOf(side)[i] ?? (dragonsSoFar >= 2 ? this.terrain : null);
           this.ocrExtra[team].dragons++;
           this.handleEvent({ EventID: -1, EventName: 'DragonKill', EventTime: gt, DragonType: type ? RAW_DRAGON[type] : undefined, Stolen: 'False' }, gt, Date.now(), team, true);
           log.info('game', `score bar: ${side} dragon ${i + 1} (${type ?? 'unknown type'}) at ${Math.floor(gt)}s`);
